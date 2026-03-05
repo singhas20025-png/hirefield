@@ -9,6 +9,7 @@ import Candidates from "./pages/Candidates";
 import Interviews from "./pages/Interviews";
 import Assessments from "./pages/Assessments";
 import AIInsights from "./pages/AIInsights";
+import CandidateDetail from "./pages/CandidateDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
