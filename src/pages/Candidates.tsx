@@ -48,7 +48,8 @@ const Candidates = () => {
 
       <div className="space-y-2">
         {mockCandidates.map((c) => (
-          <Card key={c.id} className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+          <Link to={`/candidates/${c.id}`} key={c.id}>
+          <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
