@@ -82,6 +82,7 @@ const Candidates = () => {
             </CardContent>
           </Card>
           </Link>
+        ))}
       </div>
     </div>
   );
