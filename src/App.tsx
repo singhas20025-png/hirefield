@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Candidates from "./pages/Candidates";
 import Interviews from "./pages/Interviews";
 import Assessments from "./pages/Assessments";
+import AIInsights from "./pages/AIInsights";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/candidates" element={<Candidates />} />
             <Route path="/interviews" element={<Interviews />} />
             <Route path="/assessments" element={<Assessments />} />
+            <Route path="/ai-insights" element={<AIInsights />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
