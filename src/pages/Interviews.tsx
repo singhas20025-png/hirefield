@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Video, Calendar, Clock, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { mockInterviews } from "@/lib/mock-data";
 
 const statusStyles: Record<string, string> = {
@@ -11,6 +12,7 @@ const statusStyles: Record<string, string> = {
 };
 
 const Interviews = () => {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -60,6 +62,16 @@ const Interviews = () => {
                   <Badge variant="secondary" className={statusStyles[interview.status] || ""}>
                     {interview.status}
                   </Badge>
+                  {interview.status !== "Completed" && (
+                    <Button
+                      size="sm"
+                      className="bg-accent text-accent-foreground hover:bg-accent/90"
+                      onClick={() => navigate("/video-interview")}
+                    >
+                      <Video className="h-3 w-3 mr-1" />
+                      Join
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
