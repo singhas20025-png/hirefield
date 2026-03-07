@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Candidates from "./pages/Candidates";
 import Interviews from "./pages/Interviews";
+import VideoInterview from "./pages/VideoInterview";
 import Assessments from "./pages/Assessments";
 import AIInsights from "./pages/AIInsights";
 import CandidateDetail from "./pages/CandidateDetail";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/candidates" element={<Candidates />} />
             <Route path="/candidates/:id" element={<CandidateDetail />} />
             <Route path="/interviews" element={<Interviews />} />
+            <Route path="/video-interview" element={<VideoInterview />} />
             <Route path="/assessments" element={<Assessments />} />
             <Route path="/ai-insights" element={<AIInsights />} />
             <Route path="*" element={<NotFound />} />
