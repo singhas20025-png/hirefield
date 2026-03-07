@@ -31,6 +31,7 @@ const App = () => (
             <Route path="/video-interview" element={<VideoInterview />} />
             <Route path="/assessments" element={<Assessments />} />
             <Route path="/ai-insights" element={<AIInsights />} />
+            <Route path="/scheduling" element={<Scheduling />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
