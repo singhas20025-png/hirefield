@@ -12,6 +12,7 @@ const statusStyles: Record<string, string> = {
 };
 
 const Interviews = () => {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
