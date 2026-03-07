@@ -62,6 +62,16 @@ const Interviews = () => {
                   <Badge variant="secondary" className={statusStyles[interview.status] || ""}>
                     {interview.status}
                   </Badge>
+                  {interview.status !== "Completed" && (
+                    <Button
+                      size="sm"
+                      className="bg-accent text-accent-foreground hover:bg-accent/90"
+                      onClick={() => navigate("/video-interview")}
+                    >
+                      <Video className="h-3 w-3 mr-1" />
+                      Join
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
