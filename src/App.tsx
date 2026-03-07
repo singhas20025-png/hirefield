@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Candidates from "./pages/Candidates";
 import Interviews from "./pages/Interviews";
+import VideoInterview from "./pages/VideoInterview";
 import Assessments from "./pages/Assessments";
 import AIInsights from "./pages/AIInsights";
 import CandidateDetail from "./pages/CandidateDetail";
