@@ -223,6 +223,11 @@ const CandidateDetail = () => {
                   <p className="text-muted-foreground">{candidate.role}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {!editing && (
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={startEditing}>
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                  )}
                   <Select value={candidate.stage} onValueChange={handleStageChange}>
                     <SelectTrigger className="w-36 h-8">
                       <Badge variant="secondary" className={stageColors[candidate.stage] || ""}>{candidate.stage}</Badge>
@@ -238,44 +243,117 @@ const CandidateDetail = () => {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                {candidate.email && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="h-3.5 w-3.5" /> {candidate.email}
+
+              {editing ? (
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Email</Label>
+                      <Input
+                        type="email"
+                        placeholder="candidate@email.com"
+                        value={editForm.email}
+                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Phone</Label>
+                      <Input
+                        placeholder="+1 (555) 123-4567"
+                        value={editForm.phone}
+                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Location</Label>
+                      <Input
+                        placeholder="San Francisco, CA"
+                        value={editForm.location}
+                        onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Experience</Label>
+                      <Input
+                        placeholder="5 years"
+                        value={editForm.experience}
+                        onChange={(e) => setEditForm({ ...editForm, experience: e.target.value })}
+                        className="h-9"
+                      />
+                    </div>
                   </div>
-                )}
-                {candidate.phone && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="h-3.5 w-3.5" /> {candidate.phone}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Education</Label>
+                    <Input
+                      placeholder="BS Computer Science, MIT"
+                      value={editForm.education}
+                      onChange={(e) => setEditForm({ ...editForm, education: e.target.value })}
+                      className="h-9"
+                    />
                   </div>
-                )}
-                {candidate.location && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5" /> {candidate.location}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Skills (comma-separated)</Label>
+                    <Input
+                      placeholder="React, TypeScript, Node.js"
+                      value={editForm.skills}
+                      onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })}
+                      className="h-9"
+                    />
                   </div>
-                )}
-                {candidate.experience && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Briefcase className="h-3.5 w-3.5" /> {candidate.experience}
+                  <div className="flex gap-2 pt-1">
+                    <Button onClick={handleSaveProfile} disabled={savingProfile} className="bg-accent text-accent-foreground hover:bg-accent/90" size="sm">
+                      <Save className="h-3.5 w-3.5 mr-1.5" />{savingProfile ? "Saving..." : "Save Changes"}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={cancelEditing}>
+                      <X className="h-3.5 w-3.5 mr-1.5" />Cancel
+                    </Button>
                   </div>
-                )}
-              </div>
-              {candidate.education && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <GraduationCap className="h-3.5 w-3.5" /> {candidate.education}
                 </div>
-              )}
-              {candidate.skills && candidate.skills.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {candidate.skills.map((s) => (
-                    <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
-                  ))}
-                </div>
-              )}
-              {candidate.source && (
-                <div className="text-xs text-muted-foreground">
-                  Source: {candidate.source} {candidate.applied_date && `· Applied ${candidate.applied_date}`}
-                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                    {candidate.email && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="h-3.5 w-3.5" /> {candidate.email}
+                      </div>
+                    )}
+                    {candidate.phone && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5" /> {candidate.phone}
+                      </div>
+                    )}
+                    {candidate.location && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5" /> {candidate.location}
+                      </div>
+                    )}
+                    {candidate.experience && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Briefcase className="h-3.5 w-3.5" /> {candidate.experience}
+                      </div>
+                    )}
+                  </div>
+                  {candidate.education && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <GraduationCap className="h-3.5 w-3.5" /> {candidate.education}
+                    </div>
+                  )}
+                  {candidate.skills && candidate.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {candidate.skills.map((s) => (
+                        <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
+                      ))}
+                    </div>
+                  )}
+                  {candidate.source && (
+                    <div className="text-xs text-muted-foreground">
+                      Source: {candidate.source} {candidate.applied_date && `· Applied ${candidate.applied_date}`}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
