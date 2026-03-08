@@ -86,6 +86,7 @@ const AppRoutes = () => {
                 <Route path="/compare" element={<Compare />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/career-portal" element={<CompanyProfileSetup />} />
+                <Route path="/applications" element={<ApplicationsInbox />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
