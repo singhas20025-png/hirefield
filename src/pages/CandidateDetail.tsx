@@ -75,6 +75,9 @@ const CandidateDetail = () => {
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [newSkill, setNewSkill] = useState("");
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+  const [resumeName, setResumeName] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (user && id) loadCandidate();
