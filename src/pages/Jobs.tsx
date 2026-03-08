@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { PipelineStagesEditor } from "@/components/PipelineStagesEditor";
 import {
   Plus, Search, MapPin, Clock, Users, Briefcase, DollarSign,
-  Building2, ExternalLink, MoreHorizontal, Pencil,
+  Building2, ExternalLink, MoreHorizontal, Pencil, Trash2,
 } from "lucide-react";
 
 interface Job {
@@ -68,6 +69,7 @@ export default function Jobs() {
     title: "", department: "Engineering", location: "Remote",
     type: "Full-time", salary: "", description: "",
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) loadJobs();
@@ -520,10 +522,47 @@ export default function Jobs() {
                   </DialogContent>
                 </Dialog>
 
-                <Button variant="outline" size="sm" className="w-full gap-1.5"
-                  onClick={() => window.open(`/careers/`, "_blank")}>
-                  <ExternalLink className="h-3.5 w-3.5" />View on Career Page
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1 gap-1.5"
+                    onClick={() => window.open(`/careers/`, "_blank")}>
+                    <ExternalLink className="h-3.5 w-3.5" />Career Page
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => setDeleteDialogOpen(true)}>
+                    <Trash2 className="h-3.5 w-3.5" />Delete
+                  </Button>
+                </div>
+
+                {/* Delete confirmation */}
+                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this position?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete <span className="font-medium text-foreground">{selectedJob.title}</span> and cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={async () => {
+                          const { error } = await supabase.from("jobs").delete().eq("id", selectedJob.id);
+                          if (error) {
+                            toast({ title: "Error", description: error.message, variant: "destructive" });
+                            return;
+                          }
+                          setJobs((prev) => prev.filter((j) => j.id !== selectedJob.id));
+                          setSelectedJob(null);
+                          setDeleteDialogOpen(false);
+                          toast({ title: "Deleted", description: `${selectedJob.title} has been removed` });
+                        }}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </CardContent>
             </Card>
           ) : (
