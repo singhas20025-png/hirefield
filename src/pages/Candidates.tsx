@@ -245,6 +245,9 @@ const Candidates = () => {
               <Columns3 className="h-4 w-4" />
             </Button>
           </div>
+          <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={exportCSV} disabled={candidates.length === 0}>
+            <Download className="h-4 w-4" />Export CSV
+          </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
