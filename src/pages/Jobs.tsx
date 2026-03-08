@@ -228,6 +228,7 @@ export default function Jobs() {
                 <Textarea placeholder="Brief role description..." rows={3} value={newJob.description}
                   onChange={(e) => setNewJob({ ...newJob, description: e.target.value })} />
               </div>
+              <PipelineStagesEditor stages={pipelineStages} onChange={setPipelineStages} />
               <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleCreate}>
                 Create Position
               </Button>
