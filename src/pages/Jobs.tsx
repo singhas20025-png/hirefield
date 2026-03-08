@@ -179,6 +179,45 @@ export default function Jobs() {
     toast({ title: "Pipeline Updated", description: "Hiring stages saved successfully" });
   };
 
+  const openEditDialog = (job: Job) => {
+    setEditJob({
+      title: job.title,
+      department: job.department || "Engineering",
+      location: job.location || "Remote",
+      type: job.type || "Full-time",
+      salary: job.salary || "",
+      description: job.description || "",
+    });
+    setEditPipelineStages(job.pipeline_stages || []);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!selectedJob || !editJob.title.trim()) return;
+    const updates = {
+      title: editJob.title.trim(),
+      department: editJob.department,
+      location: editJob.location,
+      type: editJob.type,
+      salary: editJob.salary || null,
+      description: editJob.description || null,
+      pipeline_stages: editPipelineStages,
+    };
+    const { error } = await supabase
+      .from("jobs")
+      .update(updates as any)
+      .eq("id", selectedJob.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    const updated = { ...selectedJob, ...updates };
+    setJobs((prev) => prev.map((j) => j.id === selectedJob.id ? updated : j));
+    setSelectedJob(updated);
+    setEditDialogOpen(false);
+    toast({ title: "Job Updated", description: `${updates.title} saved successfully` });
+  };
+
   const stats = {
     open: jobs.filter((j) => j.status === "Open").length,
     total: jobs.length,
