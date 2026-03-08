@@ -63,6 +63,11 @@ export default function Jobs() {
   );
   const [editPipelineOpen, setEditPipelineOpen] = useState(false);
   const [editPipelineStages, setEditPipelineStages] = useState<string[]>([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editJob, setEditJob] = useState({
+    title: "", department: "Engineering", location: "Remote",
+    type: "Full-time", salary: "", description: "",
+  });
 
   useEffect(() => {
     if (user) loadJobs();
