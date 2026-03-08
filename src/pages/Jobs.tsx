@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PipelineStagesEditor } from "@/components/PipelineStagesEditor";
 import {
   Plus, Search, MapPin, Clock, Users, Briefcase, DollarSign,
-  Building2, ExternalLink, MoreHorizontal, Pencil,
+  Building2, ExternalLink, MoreHorizontal, Pencil, Trash2,
 } from "lucide-react";
 
 interface Job {
