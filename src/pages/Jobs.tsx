@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PipelineStagesEditor } from "@/components/PipelineStagesEditor";
 import {
   Plus, Search, MapPin, Clock, Users, Briefcase, DollarSign,
-  Building2, ExternalLink, MoreHorizontal,
+  Building2, ExternalLink, MoreHorizontal, Pencil,
 } from "lucide-react";
 
 interface Job {
@@ -63,6 +63,11 @@ export default function Jobs() {
   );
   const [editPipelineOpen, setEditPipelineOpen] = useState(false);
   const [editPipelineStages, setEditPipelineStages] = useState<string[]>([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editJob, setEditJob] = useState({
+    title: "", department: "Engineering", location: "Remote",
+    type: "Full-time", salary: "", description: "",
+  });
 
   useEffect(() => {
     if (user) loadJobs();
@@ -172,6 +177,45 @@ export default function Jobs() {
     setSelectedJob(updated);
     setEditPipelineOpen(false);
     toast({ title: "Pipeline Updated", description: "Hiring stages saved successfully" });
+  };
+
+  const openEditDialog = (job: Job) => {
+    setEditJob({
+      title: job.title,
+      department: job.department || "Engineering",
+      location: job.location || "Remote",
+      type: job.type || "Full-time",
+      salary: job.salary || "",
+      description: job.description || "",
+    });
+    setEditPipelineStages(job.pipeline_stages || []);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!selectedJob || !editJob.title.trim()) return;
+    const updates = {
+      title: editJob.title.trim(),
+      department: editJob.department,
+      location: editJob.location,
+      type: editJob.type,
+      salary: editJob.salary || null,
+      description: editJob.description || null,
+      pipeline_stages: editPipelineStages,
+    };
+    const { error } = await supabase
+      .from("jobs")
+      .update(updates as any)
+      .eq("id", selectedJob.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    const updated = { ...selectedJob, ...updates };
+    setJobs((prev) => prev.map((j) => j.id === selectedJob.id ? updated : j));
+    setSelectedJob(updated);
+    setEditDialogOpen(false);
+    toast({ title: "Job Updated", description: `${updates.title} saved successfully` });
   };
 
   const stats = {
@@ -347,7 +391,13 @@ export default function Jobs() {
                     </SelectContent>
                   </Select>
                 </div>
-                <CardTitle className="text-lg mt-2">{selectedJob.title}</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">{selectedJob.title}</CardTitle>
+                  <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground"
+                    onClick={() => openEditDialog(selectedJob)}>
+                    <Pencil className="h-3 w-3" />Edit
+                  </Button>
+                </div>
                 <CardDescription>{selectedJob.department} · {selectedJob.location}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -416,6 +466,59 @@ export default function Jobs() {
                     <p className="text-sm text-muted-foreground">{selectedJob.description}</p>
                   </div>
                 )}
+
+                {/* Edit job dialog */}
+                <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                  <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader><DialogTitle>Edit Position</DialogTitle></DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <div className="space-y-2">
+                        <Label>Job Title</Label>
+                        <Input value={editJob.title}
+                          onChange={(e) => setEditJob({ ...editJob, title: e.target.value })} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Department</Label>
+                          <Select value={editJob.department} onValueChange={(v) => setEditJob({ ...editJob, department: v })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>{departments.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Location</Label>
+                          <Select value={editJob.location} onValueChange={(v) => setEditJob({ ...editJob, location: v })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>{locations.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Employment Type</Label>
+                          <Select value={editJob.type} onValueChange={(v) => setEditJob({ ...editJob, type: v })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>{jobTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Salary Range</Label>
+                          <Input value={editJob.salary}
+                            onChange={(e) => setEditJob({ ...editJob, salary: e.target.value })} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Description</Label>
+                        <Textarea rows={3} value={editJob.description}
+                          onChange={(e) => setEditJob({ ...editJob, description: e.target.value })} />
+                      </div>
+                      <PipelineStagesEditor stages={editPipelineStages} onChange={setEditPipelineStages} />
+                      <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleEditSave}>
+                        Save Changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
                 <Button variant="outline" size="sm" className="w-full gap-1.5"
                   onClick={() => window.open(`/careers/`, "_blank")}>
