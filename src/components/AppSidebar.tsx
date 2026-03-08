@@ -32,6 +32,7 @@ const mainItems = [
   { title: "Interviews", url: "/interviews", icon: Video },
   { title: "Assessments", url: "/assessments", icon: ClipboardCheck },
   { title: "Scheduling", url: "/scheduling", icon: Calendar },
+  { title: "Jobs", url: "/jobs", icon: Briefcase },
 ];
 
 const aiItems = [
