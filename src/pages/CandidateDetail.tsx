@@ -133,6 +133,49 @@ const CandidateDetail = () => {
     toast({ title: "Notes Saved" });
   }
 
+  function startEditing() {
+    if (!candidate) return;
+    setEditForm({
+      email: candidate.email || "",
+      phone: candidate.phone || "",
+      location: candidate.location || "",
+      experience: candidate.experience || "",
+      education: candidate.education || "",
+      skills: (candidate.skills || []).join(", "),
+    });
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    setEditing(false);
+  }
+
+  async function handleSaveProfile() {
+    if (!candidate) return;
+    setSavingProfile(true);
+    const skillsArray = editForm.skills
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    const updates = {
+      email: editForm.email.trim() || null,
+      phone: editForm.phone.trim() || null,
+      location: editForm.location.trim() || null,
+      experience: editForm.experience.trim() || null,
+      education: editForm.education.trim() || null,
+      skills: skillsArray.length > 0 ? skillsArray : null,
+    };
+    const { error } = await supabase.from("candidates").update(updates).eq("id", candidate.id);
+    setSavingProfile(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setCandidate({ ...candidate, ...updates });
+    setEditing(false);
+    toast({ title: "Profile Updated" });
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
