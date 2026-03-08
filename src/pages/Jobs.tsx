@@ -57,6 +57,9 @@ export default function Jobs() {
     title: "", department: "Engineering", location: "Remote",
     type: "Full-time", salary: "", description: "",
   });
+  const [pipelineStages, setPipelineStages] = useState<string[]>(
+    ["Applied", "Screening", "Assessment", "Video Interview", "Final Review", "Offer"]
+  );
 
   useEffect(() => {
     if (user) loadJobs();
