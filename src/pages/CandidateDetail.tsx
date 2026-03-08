@@ -490,6 +490,63 @@ const CandidateDetail = () => {
           </div>
         </TabsContent>
 
+        {/* Resume Tab */}
+        <TabsContent value="resume">
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-6 space-y-4">
+              {resumeName ? (
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-accent/10">
+                      <FileText className="h-5 w-5 text-accent" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{resumeName}</p>
+                      <p className="text-xs text-muted-foreground">Uploaded resume</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {resumeUrl && (
+                      <Button variant="outline" size="sm" className="h-8 gap-1.5" asChild>
+                        <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3.5 w-3.5" /> View
+                        </a>
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5 text-destructive hover:bg-destructive/10" onClick={handleResumeDelete}>
+                      <Trash2 className="h-3.5 w-3.5" /> Remove
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 space-y-3">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">No resume uploaded yet</p>
+                </div>
+              )}
+              <div>
+                <Label htmlFor="resume-upload" className="cursor-pointer">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/90 transition-colors">
+                    <Upload className="h-4 w-4" />
+                    {uploading ? "Uploading..." : resumeName ? "Replace Resume" : "Upload Resume"}
+                  </div>
+                </Label>
+                <input
+                  id="resume-upload"
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={handleResumeUpload}
+                  disabled={uploading}
+                />
+                <p className="text-xs text-muted-foreground mt-2">PDF or Word documents, max 10MB</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Notes Tab */}
         <TabsContent value="notes">
           <Card className="border-none shadow-sm">
