@@ -379,7 +379,14 @@ export default function Jobs() {
                 {/* Pipeline stages */}
                 {selectedJob.pipeline_stages && selectedJob.pipeline_stages.length > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1.5">Hiring Pipeline</p>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-xs text-muted-foreground">Hiring Pipeline</p>
+                      <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground"
+                        onClick={() => {
+                          setEditPipelineStages(selectedJob.pipeline_stages || []);
+                          setEditPipelineOpen(true);
+                        }}>Edit</Button>
+                    </div>
                     <div className="flex flex-wrap gap-1">
                       {selectedJob.pipeline_stages.map((stage, i) => (
                         <Badge key={i} variant="outline" className="text-[10px]">
@@ -389,6 +396,19 @@ export default function Jobs() {
                     </div>
                   </div>
                 )}
+
+                {/* Edit pipeline dialog */}
+                <Dialog open={editPipelineOpen} onOpenChange={setEditPipelineOpen}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader><DialogTitle>Edit Pipeline Stages</DialogTitle></DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <PipelineStagesEditor stages={editPipelineStages} onChange={setEditPipelineStages} />
+                      <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleUpdatePipeline}>
+                        Save Changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
                 {selectedJob.description && (
                   <div>
