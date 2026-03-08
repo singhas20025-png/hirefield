@@ -41,6 +41,7 @@ const mainItems = [
 const aiItems = [
   { title: "AI Insights", url: "/ai-insights", icon: Brain },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Reports", url: "/reports", icon: FileText },
 ];
 
 export function AppSidebar() {
