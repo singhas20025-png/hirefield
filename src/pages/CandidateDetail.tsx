@@ -126,6 +126,7 @@ const CandidateDetail = () => {
 
   async function handleStageChange(newStage: string) {
     if (!candidate) return;
+    const oldStage = candidate.stage;
     const { error } = await supabase.from("candidates").update({ stage: newStage }).eq("id", candidate.id);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -133,6 +134,22 @@ const CandidateDetail = () => {
     }
     setCandidate({ ...candidate, stage: newStage });
     toast({ title: "Stage Updated", description: `Moved to ${newStage}` });
+
+    // Send email notification via edge function
+    try {
+      await supabase.functions.invoke("send-stage-email", {
+        body: {
+          candidate_name: candidate.name,
+          candidate_email: candidate.email || null,
+          old_stage: oldStage,
+          new_stage: newStage,
+          recruiter_email: user?.email || null,
+        },
+      });
+    } catch (emailErr) {
+      console.error("Failed to send stage email:", emailErr);
+      // Don't show error to user — email is best-effort
+    }
   }
 
   async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
