@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { PipelineStagesEditor } from "@/components/PipelineStagesEditor";
 import {
   Plus, Search, MapPin, Clock, Users, Briefcase, DollarSign,
   Building2, ExternalLink, MoreHorizontal,
