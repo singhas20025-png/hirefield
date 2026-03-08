@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Plus, LayoutList, Columns3, ArrowRight, Trash2, X, CheckSquare } from "lucide-react";
+import { Search, Filter, Plus, LayoutList, Columns3, ArrowRight, Trash2, X, CheckSquare, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CandidateKanban } from "@/components/CandidateKanban";
 
