@@ -61,6 +61,8 @@ export default function Jobs() {
   const [pipelineStages, setPipelineStages] = useState<string[]>(
     ["Applied", "Screening", "Assessment", "Video Interview", "Final Review", "Offer"]
   );
+  const [editPipelineOpen, setEditPipelineOpen] = useState(false);
+  const [editPipelineStages, setEditPipelineStages] = useState<string[]>([]);
 
   useEffect(() => {
     if (user) loadJobs();
