@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { PipelineStagesEditor } from "@/components/PipelineStagesEditor";
 import {
   Plus, Search, MapPin, Clock, Users, Briefcase, DollarSign,
   Building2, ExternalLink, MoreHorizontal,
@@ -29,6 +30,7 @@ interface Job {
   description: string | null;
   user_id: string;
   created_at: string;
+  pipeline_stages: string[] | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -56,6 +58,9 @@ export default function Jobs() {
     title: "", department: "Engineering", location: "Remote",
     type: "Full-time", salary: "", description: "",
   });
+  const [pipelineStages, setPipelineStages] = useState<string[]>(
+    ["Applied", "Screening", "Assessment", "Video Interview", "Final Review", "Offer"]
+  );
 
   useEffect(() => {
     if (user) loadJobs();
@@ -115,7 +120,8 @@ export default function Jobs() {
         description: newJob.description || null,
         status: "Draft",
         posted_date: new Date().toISOString().split("T")[0],
-      })
+        pipeline_stages: pipelineStages,
+      } as any)
       .select()
       .single();
 
@@ -126,6 +132,7 @@ export default function Jobs() {
 
     setJobs([data as Job, ...jobs]);
     setNewJob({ title: "", department: "Engineering", location: "Remote", type: "Full-time", salary: "", description: "" });
+    setPipelineStages(["Applied", "Screening", "Assessment", "Video Interview", "Final Review", "Offer"]);
     setDialogOpen(false);
     toast({ title: "Job Created", description: `${newJob.title} saved as draft` });
   };
@@ -221,6 +228,7 @@ export default function Jobs() {
                 <Textarea placeholder="Brief role description..." rows={3} value={newJob.description}
                   onChange={(e) => setNewJob({ ...newJob, description: e.target.value })} />
               </div>
+              <PipelineStagesEditor stages={pipelineStages} onChange={setPipelineStages} />
               <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleCreate}>
                 Create Position
               </Button>
@@ -348,6 +356,20 @@ export default function Jobs() {
                   <Progress value={Math.min(((candidateCounts[selectedJob.id] || 0) / 30) * 100, 100)} className="h-2" />
                   <p className="text-xs text-muted-foreground mt-1">{candidateCounts[selectedJob.id] || 0}/30 target</p>
                 </div>
+
+                {/* Pipeline stages */}
+                {selectedJob.pipeline_stages && selectedJob.pipeline_stages.length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1.5">Hiring Pipeline</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedJob.pipeline_stages.map((stage, i) => (
+                        <Badge key={i} variant="outline" className="text-[10px]">
+                          {i + 1}. {stage}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {selectedJob.description && (
                   <div>
