@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, Mail, Phone, MapPin, Briefcase, GraduationCap, Calendar,
-  Star, CheckCircle2, Clock, Circle, Save, Pencil, X, Plus,
+  Star, CheckCircle2, Clock, Circle, Save, Pencil, X, Plus, FileText, Upload, Trash2, ExternalLink,
 } from "lucide-react";
 import { stageColors } from "@/pages/Candidates";
 import { useToast } from "@/hooks/use-toast";
@@ -75,6 +75,9 @@ const CandidateDetail = () => {
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [newSkill, setNewSkill] = useState("");
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+  const [resumeName, setResumeName] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (user && id) loadCandidate();
@@ -106,6 +109,18 @@ const CandidateDetail = () => {
 
     setInterviews((intRes.data || []) as Interview[]);
     setAssessments((assRes.data || []) as Assessment[]);
+
+    // Load resume
+    if (id) {
+      const { data: files } = await supabase.storage.from("resumes").list(`${user!.id}/${id}`);
+      if (files && files.length > 0) {
+        const file = files[0];
+        setResumeName(file.name);
+        const { data: urlData } = await supabase.storage.from("resumes").createSignedUrl(`${user!.id}/${id}/${file.name}`, 3600);
+        if (urlData) setResumeUrl(urlData.signedUrl);
+      }
+    }
+
     setLoading(false);
   }
 
@@ -120,6 +135,51 @@ const CandidateDetail = () => {
     toast({ title: "Stage Updated", description: `Moved to ${newStage}` });
   }
 
+  async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !candidate || !user) return;
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast({ title: "File too large", description: "Maximum file size is 10MB", variant: "destructive" });
+      return;
+    }
+    const allowed = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+    if (!allowed.includes(file.type)) {
+      toast({ title: "Invalid file type", description: "Please upload a PDF or Word document", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    const path = `${user.id}/${candidate.id}/${file.name}`;
+    // Remove old file if exists
+    if (resumeName) {
+      await supabase.storage.from("resumes").remove([`${user.id}/${candidate.id}/${resumeName}`]);
+    }
+    const { error } = await supabase.storage.from("resumes").upload(path, file, { upsert: true });
+    if (error) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    const { data: urlData } = await supabase.storage.from("resumes").createSignedUrl(path, 3600);
+    setResumeName(file.name);
+    setResumeUrl(urlData?.signedUrl || null);
+    setUploading(false);
+    toast({ title: "Resume Uploaded", description: file.name });
+    // Reset input
+    e.target.value = "";
+  }
+
+  async function handleResumeDelete() {
+    if (!candidate || !user || !resumeName) return;
+    const { error } = await supabase.storage.from("resumes").remove([`${user.id}/${candidate.id}/${resumeName}`]);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setResumeName(null);
+    setResumeUrl(null);
+    toast({ title: "Resume Removed" });
+  }
   async function handleSaveNotes() {
     if (!candidate) return;
     setSavingNotes(true);
@@ -365,6 +425,7 @@ const CandidateDetail = () => {
         <TabsList>
           <TabsTrigger value="interviews">Interviews ({interviews.length})</TabsTrigger>
           <TabsTrigger value="assessments">Assessments ({assessments.length})</TabsTrigger>
+          <TabsTrigger value="resume">Resume</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
@@ -427,6 +488,63 @@ const CandidateDetail = () => {
               ))
             )}
           </div>
+        </TabsContent>
+
+        {/* Resume Tab */}
+        <TabsContent value="resume">
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-6 space-y-4">
+              {resumeName ? (
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-accent/10">
+                      <FileText className="h-5 w-5 text-accent" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{resumeName}</p>
+                      <p className="text-xs text-muted-foreground">Uploaded resume</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {resumeUrl && (
+                      <Button variant="outline" size="sm" className="h-8 gap-1.5" asChild>
+                        <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3.5 w-3.5" /> View
+                        </a>
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5 text-destructive hover:bg-destructive/10" onClick={handleResumeDelete}>
+                      <Trash2 className="h-3.5 w-3.5" /> Remove
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 space-y-3">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">No resume uploaded yet</p>
+                </div>
+              )}
+              <div>
+                <Label htmlFor="resume-upload" className="cursor-pointer">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/90 transition-colors">
+                    <Upload className="h-4 w-4" />
+                    {uploading ? "Uploading..." : resumeName ? "Replace Resume" : "Upload Resume"}
+                  </div>
+                </Label>
+                <input
+                  id="resume-upload"
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={handleResumeUpload}
+                  disabled={uploading}
+                />
+                <p className="text-xs text-muted-foreground mt-2">PDF or Word documents, max 10MB</p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Notes Tab */}
