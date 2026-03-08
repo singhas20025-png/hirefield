@@ -69,6 +69,7 @@ export default function Jobs() {
     title: "", department: "Engineering", location: "Remote",
     type: "Full-time", salary: "", description: "",
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) loadJobs();
