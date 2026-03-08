@@ -61,6 +61,8 @@ export default function Jobs() {
   const [pipelineStages, setPipelineStages] = useState<string[]>(
     ["Applied", "Screening", "Assessment", "Video Interview", "Final Review", "Offer"]
   );
+  const [editPipelineOpen, setEditPipelineOpen] = useState(false);
+  const [editPipelineStages, setEditPipelineStages] = useState<string[]>([]);
 
   useEffect(() => {
     if (user) loadJobs();
@@ -153,6 +155,23 @@ export default function Jobs() {
       setSelectedJob((prev) => prev ? { ...prev, status: newStatus } : null);
     }
     toast({ title: "Updated", description: `Status changed to ${newStatus}` });
+  };
+
+  const handleUpdatePipeline = async () => {
+    if (!selectedJob) return;
+    const { error } = await supabase
+      .from("jobs")
+      .update({ pipeline_stages: editPipelineStages } as any)
+      .eq("id", selectedJob.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    const updated = { ...selectedJob, pipeline_stages: editPipelineStages };
+    setJobs((prev) => prev.map((j) => j.id === selectedJob.id ? updated : j));
+    setSelectedJob(updated);
+    setEditPipelineOpen(false);
+    toast({ title: "Pipeline Updated", description: "Hiring stages saved successfully" });
   };
 
   const stats = {
@@ -360,7 +379,14 @@ export default function Jobs() {
                 {/* Pipeline stages */}
                 {selectedJob.pipeline_stages && selectedJob.pipeline_stages.length > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1.5">Hiring Pipeline</p>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-xs text-muted-foreground">Hiring Pipeline</p>
+                      <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground"
+                        onClick={() => {
+                          setEditPipelineStages(selectedJob.pipeline_stages || []);
+                          setEditPipelineOpen(true);
+                        }}>Edit</Button>
+                    </div>
                     <div className="flex flex-wrap gap-1">
                       {selectedJob.pipeline_stages.map((stage, i) => (
                         <Badge key={i} variant="outline" className="text-[10px]">
@@ -370,6 +396,19 @@ export default function Jobs() {
                     </div>
                   </div>
                 )}
+
+                {/* Edit pipeline dialog */}
+                <Dialog open={editPipelineOpen} onOpenChange={setEditPipelineOpen}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader><DialogTitle>Edit Pipeline Stages</DialogTitle></DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <PipelineStagesEditor stages={editPipelineStages} onChange={setEditPipelineStages} />
+                      <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleUpdatePipeline}>
+                        Save Changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
                 {selectedJob.description && (
                   <div>
