@@ -195,6 +195,30 @@ const Candidates = () => {
     );
   }
 
+  function exportCSV() {
+    const data = selected.size > 0
+      ? candidates.filter((c) => selected.has(c.id))
+      : filtered;
+    if (data.length === 0) return;
+    const headers = ["Name", "Role", "Stage", "Email", "Phone", "Source", "Location", "Score", "Applied Date", "Skills", "Education", "Experience"];
+    const rows = data.map((c) => [
+      c.name, c.role, c.stage, c.email || "", c.phone || "", c.source || "",
+      c.location || "", c.score?.toString() || "", c.applied_date || "",
+      (c.skills || []).join("; "), c.education || "", c.experience || "",
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((v) => `"${v.replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `candidates-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: `${data.length} candidate(s) exported to CSV` });
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
