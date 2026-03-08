@@ -14,6 +14,7 @@ import CandidateDetail from "./pages/CandidateDetail";
 import Scheduling from "./pages/Scheduling";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import Jobs from "./pages/Jobs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/ai-insights" element={<AIInsights />} />
             <Route path="/scheduling" element={<Scheduling />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/jobs" element={<Jobs />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
