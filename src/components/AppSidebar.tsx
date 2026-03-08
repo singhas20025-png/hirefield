@@ -13,6 +13,7 @@ import {
   FileText,
   LogOut,
   Globe,
+  Inbox,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { NavLink } from "@/components/NavLink";
@@ -38,6 +39,7 @@ const mainItems = [
   { title: "Assessments", url: "/assessments", icon: ClipboardCheck },
   { title: "Scheduling", url: "/scheduling", icon: Calendar },
   { title: "Jobs", url: "/jobs", icon: Briefcase },
+  { title: "Applications", url: "/applications", icon: Inbox },
   { title: "Career Portal", url: "/career-portal", icon: Globe },
   { title: "Compare", url: "/compare", icon: GitCompareArrows },
 ];

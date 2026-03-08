@@ -20,6 +20,7 @@ import Jobs from "./pages/Jobs";
 import Compare from "./pages/Compare";
 import Reports from "./pages/Reports";
 import CompanyProfileSetup from "./pages/CompanyProfileSetup";
+import ApplicationsInbox from "./pages/ApplicationsInbox";
 import CareerPage from "./pages/CareerPage";
 import ApplyJob from "./pages/ApplyJob";
 import CandidateAuth from "./pages/CandidateAuth";
@@ -85,6 +86,7 @@ const AppRoutes = () => {
                 <Route path="/compare" element={<Compare />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/career-portal" element={<CompanyProfileSetup />} />
+                <Route path="/applications" element={<ApplicationsInbox />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
