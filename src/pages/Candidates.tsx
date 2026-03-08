@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Plus, LayoutList, Columns3, ArrowRight, Trash2, X, CheckSquare } from "lucide-react";
+import { Search, Filter, Plus, LayoutList, Columns3, ArrowRight, Trash2, X, CheckSquare, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CandidateKanban } from "@/components/CandidateKanban";
 
@@ -195,6 +195,30 @@ const Candidates = () => {
     );
   }
 
+  function exportCSV() {
+    const data = selected.size > 0
+      ? candidates.filter((c) => selected.has(c.id))
+      : filtered;
+    if (data.length === 0) return;
+    const headers = ["Name", "Role", "Stage", "Email", "Phone", "Source", "Location", "Score", "Applied Date", "Skills", "Education", "Experience"];
+    const rows = data.map((c) => [
+      c.name, c.role, c.stage, c.email || "", c.phone || "", c.source || "",
+      c.location || "", c.score?.toString() || "", c.applied_date || "",
+      (c.skills || []).join("; "), c.education || "", c.experience || "",
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((v) => `"${v.replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `candidates-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: `${data.length} candidate(s) exported to CSV` });
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -221,6 +245,9 @@ const Candidates = () => {
               <Columns3 className="h-4 w-4" />
             </Button>
           </div>
+          <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={exportCSV} disabled={candidates.length === 0}>
+            <Download className="h-4 w-4" />Export CSV
+          </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
