@@ -106,30 +106,33 @@ export default function ApplicationsInbox() {
 
     const jobIds = jobs.map((j) => j.id);
 
-    const { data, error } = await supabase
+    const { data: appsData } = await supabase
       .from("job_applications")
-      .select(`
-        *,
-        jobs(title, department, location, type),
-        candidate_profiles!job_applications_candidate_user_id_fkey(
-          full_name, email, phone, location, headline, linkedin_url, portfolio_url, skills, experience_years
-        )
-      `)
+      .select("*, jobs(title, department, location, type)")
       .in("job_id", jobIds)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error loading applications:", error);
-      // Fallback: load without the join that might fail
-      const { data: fallbackData } = await supabase
-        .from("job_applications")
-        .select("*, jobs(title, department, location, type)")
-        .in("job_id", jobIds)
-        .order("created_at", { ascending: false });
-      setApplications((fallbackData as Application[]) || []);
-    } else {
-      setApplications((data as Application[]) || []);
+    if (!appsData || appsData.length === 0) {
+      setApplications([]);
+      setLoading(false);
+      return;
     }
+
+    // Load candidate profiles separately
+    const candidateIds = [...new Set(appsData.map((a) => a.candidate_user_id))];
+    const { data: profiles } = await supabase
+      .from("candidate_profiles")
+      .select("*")
+      .in("user_id", candidateIds);
+
+    const profileMap = new Map((profiles || []).map((p) => [p.user_id, p]));
+
+    const merged = appsData.map((app) => ({
+      ...app,
+      candidate_profiles: profileMap.get(app.candidate_user_id) || null,
+    }));
+
+    setApplications(merged as unknown as Application[]);
     setLoading(false);
   }
 
