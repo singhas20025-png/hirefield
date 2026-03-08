@@ -425,6 +425,7 @@ const CandidateDetail = () => {
         <TabsList>
           <TabsTrigger value="interviews">Interviews ({interviews.length})</TabsTrigger>
           <TabsTrigger value="assessments">Assessments ({assessments.length})</TabsTrigger>
+          <TabsTrigger value="resume">Resume</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
