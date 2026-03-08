@@ -180,7 +180,7 @@ const CandidateDetail = () => {
     setResumeUrl(null);
     toast({ title: "Resume Removed" });
   }
-
+  async function handleSaveNotes() {
     if (!candidate) return;
     setSavingNotes(true);
     const { error } = await supabase.from("candidates").update({ notes }).eq("id", candidate.id);
