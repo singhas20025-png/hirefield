@@ -34,6 +34,7 @@ const mainItems = [
   { title: "Assessments", url: "/assessments", icon: ClipboardCheck },
   { title: "Scheduling", url: "/scheduling", icon: Calendar },
   { title: "Jobs", url: "/jobs", icon: Briefcase },
+  { title: "Compare", url: "/compare", icon: GitCompareArrows },
 ];
 
 const aiItems = [
