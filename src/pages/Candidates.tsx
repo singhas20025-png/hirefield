@@ -302,6 +302,57 @@ const Candidates = () => {
             ))}
           </div>
 
+          {/* Bulk action bar */}
+          {selected.size > 0 && (
+            <Card className="border-accent/30 bg-accent/5">
+              <CardContent className="p-3 flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="h-4 w-4 text-accent" />
+                  <span className="text-sm font-medium">{selected.size} selected</span>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSelected(new Set())}>
+                    <X className="h-3 w-3 mr-1" />Clear
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={bulkStage} onValueChange={setBulkStage}>
+                    <SelectTrigger className="h-8 w-36 text-xs">
+                      <SelectValue placeholder="Move to stage..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stages.filter((s) => s !== "All").map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button size="sm" className="h-8 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleBulkMove} disabled={!bulkStage}>
+                    <ArrowRight className="h-3 w-3 mr-1" />Move
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 text-destructive hover:bg-destructive/10" onClick={() => setBulkDeleteOpen(true)}>
+                    <Trash2 className="h-3 w-3 mr-1" />Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Bulk delete confirmation */}
+          <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {selected.size} candidate(s)?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently remove the selected candidates and cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBulkDelete}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {filtered.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center text-muted-foreground">
@@ -312,12 +363,28 @@ const Candidates = () => {
             </Card>
           ) : (
             <div className="space-y-2">
+              {/* Select all row */}
+              <div className="flex items-center gap-3 px-4 py-1">
+                <Checkbox
+                  checked={filtered.length > 0 && selected.size === filtered.length}
+                  onCheckedChange={toggleSelectAll}
+                  className="data-[state=checked]:bg-accent data-[state=checked]:border-accent"
+                />
+                <span className="text-xs text-muted-foreground">Select all</span>
+              </div>
+
               {filtered.map((c) => (
-                <Link to={`/candidates/${c.id}`} key={c.id}>
-                  <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                <Card key={c.id} className={`border-none shadow-sm hover:shadow-md transition-shadow ${selected.has(c.id) ? "ring-1 ring-accent" : ""}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={selected.has(c.id)}
+                          onCheckedChange={() => toggleSelect(c.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="data-[state=checked]:bg-accent data-[state=checked]:border-accent"
+                        />
+                        <Link to={`/candidates/${c.id}`} className="flex items-center gap-3 flex-1">
                           <Avatar className="h-10 w-10">
                             <AvatarFallback className="bg-secondary text-sm font-medium">
                               {getInitials(c.name)}
@@ -327,26 +394,26 @@ const Candidates = () => {
                             <p className="font-medium">{c.name}</p>
                             <p className="text-sm text-muted-foreground">{c.role}</p>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right hidden sm:block">
-                            <p className="text-xs text-muted-foreground">Source</p>
-                            <p className="text-sm font-medium">{c.source || "—"}</p>
-                          </div>
-                          <div className="text-right hidden sm:block">
-                            <p className="text-xs text-muted-foreground">Score</p>
-                            <p className={`text-sm font-bold ${(c.score ?? 0) >= 80 ? "text-success" : (c.score ?? 0) >= 60 ? "text-warning" : "text-destructive"}`}>
-                              {c.score ?? "—"}%
-                            </p>
-                          </div>
-                          <Badge variant="secondary" className={stageColors[c.stage] || ""}>
-                            {c.stage}
-                          </Badge>
-                        </div>
+                        </Link>
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right hidden sm:block">
+                          <p className="text-xs text-muted-foreground">Source</p>
+                          <p className="text-sm font-medium">{c.source || "—"}</p>
+                        </div>
+                        <div className="text-right hidden sm:block">
+                          <p className="text-xs text-muted-foreground">Score</p>
+                          <p className={`text-sm font-bold ${(c.score ?? 0) >= 80 ? "text-success" : (c.score ?? 0) >= 60 ? "text-warning" : "text-destructive"}`}>
+                            {c.score ?? "—"}%
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className={stageColors[c.stage] || ""}>
+                          {c.stage}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
