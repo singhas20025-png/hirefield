@@ -14,6 +14,7 @@ import CandidateDetail from "./pages/CandidateDetail";
 import Scheduling from "./pages/Scheduling";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import Jobs from "./pages/Jobs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
