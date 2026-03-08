@@ -391,7 +391,13 @@ export default function Jobs() {
                     </SelectContent>
                   </Select>
                 </div>
-                <CardTitle className="text-lg mt-2">{selectedJob.title}</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">{selectedJob.title}</CardTitle>
+                  <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground"
+                    onClick={() => openEditDialog(selectedJob)}>
+                    <Pencil className="h-3 w-3" />Edit
+                  </Button>
+                </div>
                 <CardDescription>{selectedJob.department} · {selectedJob.location}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
