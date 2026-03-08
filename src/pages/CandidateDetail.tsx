@@ -109,6 +109,18 @@ const CandidateDetail = () => {
 
     setInterviews((intRes.data || []) as Interview[]);
     setAssessments((assRes.data || []) as Assessment[]);
+
+    // Load resume
+    if (id) {
+      const { data: files } = await supabase.storage.from("resumes").list(`${user!.id}/${id}`);
+      if (files && files.length > 0) {
+        const file = files[0];
+        setResumeName(file.name);
+        const { data: urlData } = await supabase.storage.from("resumes").createSignedUrl(`${user!.id}/${id}/${file.name}`, 3600);
+        if (urlData) setResumeUrl(urlData.signedUrl);
+      }
+    }
+
     setLoading(false);
   }
 
