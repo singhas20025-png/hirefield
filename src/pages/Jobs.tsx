@@ -357,6 +357,20 @@ export default function Jobs() {
                   <p className="text-xs text-muted-foreground mt-1">{candidateCounts[selectedJob.id] || 0}/30 target</p>
                 </div>
 
+                {/* Pipeline stages */}
+                {selectedJob.pipeline_stages && selectedJob.pipeline_stages.length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1.5">Hiring Pipeline</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedJob.pipeline_stages.map((stage, i) => (
+                        <Badge key={i} variant="outline" className="text-[10px]">
+                          {i + 1}. {stage}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {selectedJob.description && (
                   <div>
                     <p className="text-sm font-medium text-foreground mb-1">Description</p>
