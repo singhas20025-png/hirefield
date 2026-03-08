@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,68 +9,27 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Search, MapPin, Clock, Users, Briefcase, DollarSign,
   Building2, ExternalLink, MoreHorizontal,
 } from "lucide-react";
-import { mockCandidates } from "@/lib/mock-data";
 
 interface Job {
   id: string;
   title: string;
-  department: string;
-  location: string;
-  type: string;
-  salary: string;
-  status: "Open" | "Paused" | "Closed" | "Draft";
-  postedDate: string;
-  candidates: number;
-  description: string;
-  linkedCandidateIds: string[];
+  department: string | null;
+  location: string | null;
+  type: string | null;
+  salary: string | null;
+  status: string | null;
+  posted_date: string | null;
+  description: string | null;
+  user_id: string;
+  created_at: string;
 }
-
-const initialJobs: Job[] = [
-  {
-    id: "j1", title: "Senior Frontend Engineer", department: "Engineering", location: "Remote",
-    type: "Full-time", salary: "$140k – $180k", status: "Open", postedDate: "2026-02-20",
-    candidates: 24, description: "We're looking for a senior frontend engineer to lead our UI efforts.",
-    linkedCandidateIds: ["1", "7"],
-  },
-  {
-    id: "j2", title: "Product Manager", department: "Product", location: "New York, NY",
-    type: "Full-time", salary: "$130k – $165k", status: "Open", postedDate: "2026-02-25",
-    candidates: 18, description: "Join our product team to drive roadmap and strategy.",
-    linkedCandidateIds: ["2"],
-  },
-  {
-    id: "j3", title: "Data Scientist", department: "Data", location: "San Francisco, CA",
-    type: "Full-time", salary: "$150k – $190k", status: "Open", postedDate: "2026-03-01",
-    candidates: 12, description: "Build ML models and derive insights from large datasets.",
-    linkedCandidateIds: ["3"],
-  },
-  {
-    id: "j4", title: "UX Designer", department: "Design", location: "Remote",
-    type: "Contract", salary: "$90k – $120k", status: "Paused", postedDate: "2026-02-10",
-    candidates: 8, description: "Design intuitive experiences across our product suite.",
-    linkedCandidateIds: ["5"],
-  },
-  {
-    id: "j5", title: "Backend Engineer", department: "Engineering", location: "Austin, TX",
-    type: "Full-time", salary: "$135k – $175k", status: "Open", postedDate: "2026-02-18",
-    candidates: 15, description: "Build scalable APIs and microservices infrastructure.",
-    linkedCandidateIds: ["4"],
-  },
-  {
-    id: "j6", title: "DevOps Engineer", department: "Engineering", location: "Remote",
-    type: "Full-time", salary: "$130k – $160k", status: "Draft", postedDate: "2026-03-05",
-    candidates: 0, description: "Manage CI/CD pipelines and cloud infrastructure.",
-    linkedCandidateIds: ["6"],
-  },
-];
 
 const statusColors: Record<string, string> = {
   Open: "bg-success/15 text-success",
@@ -82,46 +43,127 @@ const jobTypes = ["Full-time", "Part-time", "Contract", "Internship"];
 const locations = ["Remote", "New York, NY", "San Francisco, CA", "Austin, TX", "London, UK", "Berlin, DE"];
 
 export default function Jobs() {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [jobs, setJobs] = useState<Job[]>(initialJobs);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [candidateCounts, setCandidateCounts] = useState<Record<string, number>>({});
   const [newJob, setNewJob] = useState({
     title: "", department: "Engineering", location: "Remote",
     type: "Full-time", salary: "", description: "",
   });
 
+  useEffect(() => {
+    if (user) loadJobs();
+  }, [user]);
+
+  async function loadJobs() {
+    const { data, error } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("user_id", user!.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    const jobsList = (data || []) as Job[];
+    setJobs(jobsList);
+
+    // Load candidate counts from job_applications
+    if (jobsList.length > 0) {
+      const { data: apps } = await supabase
+        .from("job_applications")
+        .select("job_id")
+        .in("job_id", jobsList.map((j) => j.id));
+
+      const counts: Record<string, number> = {};
+      (apps || []).forEach((a) => {
+        counts[a.job_id] = (counts[a.job_id] || 0) + 1;
+      });
+      setCandidateCounts(counts);
+    }
+
+    setLoading(false);
+  }
+
   const filtered = jobs.filter((j) => {
     const matchSearch = j.title.toLowerCase().includes(search.toLowerCase()) ||
-      j.department.toLowerCase().includes(search.toLowerCase());
+      (j.department?.toLowerCase().includes(search.toLowerCase()) ?? false);
     const matchStatus = statusFilter === "All" || j.status === statusFilter;
     return matchSearch && matchStatus;
   });
 
-  const handleCreate = () => {
-    if (!newJob.title) return;
-    const job: Job = {
-      id: `j${Date.now()}`,
-      ...newJob,
-      status: "Draft",
-      postedDate: new Date().toISOString().split("T")[0],
-      candidates: 0,
-      linkedCandidateIds: [],
-    };
-    setJobs([job, ...jobs]);
+  const handleCreate = async () => {
+    if (!newJob.title || !user) return;
+    const { data, error } = await supabase
+      .from("jobs")
+      .insert({
+        user_id: user.id,
+        title: newJob.title,
+        department: newJob.department,
+        location: newJob.location,
+        type: newJob.type,
+        salary: newJob.salary || null,
+        description: newJob.description || null,
+        status: "Draft",
+        posted_date: new Date().toISOString().split("T")[0],
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    setJobs([data as Job, ...jobs]);
     setNewJob({ title: "", department: "Engineering", location: "Remote", type: "Full-time", salary: "", description: "" });
     setDialogOpen(false);
-    toast({ title: "Job Created", description: `${job.title} saved as draft` });
+    toast({ title: "Job Created", description: `${newJob.title} saved as draft` });
+  };
+
+  const handleStatusChange = async (jobId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from("jobs")
+      .update({ status: newStatus })
+      .eq("id", jobId);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    setJobs((prev) => prev.map((j) => j.id === jobId ? { ...j, status: newStatus } : j));
+    if (selectedJob?.id === jobId) {
+      setSelectedJob((prev) => prev ? { ...prev, status: newStatus } : null);
+    }
+    toast({ title: "Updated", description: `Status changed to ${newStatus}` });
   };
 
   const stats = {
     open: jobs.filter((j) => j.status === "Open").length,
     total: jobs.length,
-    candidates: jobs.reduce((sum, j) => sum + j.candidates, 0),
+    candidates: Object.values(candidateCounts).reduce((sum, c) => sum + c, 0),
     filled: jobs.filter((j) => j.status === "Closed").length,
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-4 gap-4">{[1,2,3,4].map((i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
+        <div className="space-y-3">{[1,2,3].map((i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -133,14 +175,11 @@ export default function Jobs() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-              <Plus className="h-4 w-4 mr-2" />
-              New Position
+              <Plus className="h-4 w-4 mr-2" />New Position
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Create New Position</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Create New Position</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-2">
                 <Label>Job Title</Label>
@@ -195,12 +234,12 @@ export default function Jobs() {
         {[
           { label: "Open Roles", value: stats.open, icon: Briefcase, color: "text-accent" },
           { label: "Total Positions", value: stats.total, icon: Building2, color: "text-info" },
-          { label: "Total Candidates", value: stats.candidates, icon: Users, color: "text-success" },
+          { label: "Total Applicants", value: stats.candidates, icon: Users, color: "text-success" },
           { label: "Filled This Quarter", value: stats.filled, icon: DollarSign, color: "text-warning" },
         ].map((s) => (
           <Card key={s.label}>
             <CardContent className="p-4 flex items-center gap-3">
-              <div className={`h-9 w-9 rounded-lg bg-muted flex items-center justify-center`}>
+              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
                 <s.icon className={`h-4 w-4 ${s.color}`} />
               </div>
               <div>
@@ -221,14 +260,9 @@ export default function Jobs() {
         </div>
         <div className="flex gap-1.5">
           {["All", "Open", "Paused", "Draft", "Closed"].map((s) => (
-            <Badge
-              key={s}
-              variant={statusFilter === s ? "default" : "secondary"}
+            <Badge key={s} variant={statusFilter === s ? "default" : "secondary"}
               className={`cursor-pointer ${statusFilter === s ? "bg-accent text-accent-foreground" : ""}`}
-              onClick={() => setStatusFilter(s)}
-            >
-              {s}
-            </Badge>
+              onClick={() => setStatusFilter(s)}>{s}</Badge>
           ))}
         </div>
       </div>
@@ -237,34 +271,34 @@ export default function Jobs() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-3">
           {filtered.map((job) => (
-            <Card
-              key={job.id}
+            <Card key={job.id}
               className={`cursor-pointer transition-all hover:shadow-md ${selectedJob?.id === job.id ? "ring-1 ring-accent" : ""}`}
-              onClick={() => setSelectedJob(job)}
-            >
+              onClick={() => setSelectedJob(job)}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-foreground">{job.title}</h3>
-                      <Badge variant="secondary" className={statusColors[job.status]}>{job.status}</Badge>
+                      <Badge variant="secondary" className={statusColors[job.status || "Draft"]}>{job.status || "Draft"}</Badge>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{job.department}</span>
-                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location}</span>
-                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{job.type}</span>
+                      {job.department && <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{job.department}</span>}
+                      {job.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location}</span>}
+                      {job.type && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{job.type}</span>}
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-foreground">{job.salary}</p>
-                    <p className="text-xs text-muted-foreground">{job.candidates} candidates</p>
+                    {job.salary && <p className="text-sm font-medium text-foreground">{job.salary}</p>}
+                    <p className="text-xs text-muted-foreground">{candidateCounts[job.id] || 0} applicants</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
           {filtered.length === 0 && (
-            <Card><CardContent className="p-8 text-center text-muted-foreground">No positions found</CardContent></Card>
+            <Card><CardContent className="p-8 text-center text-muted-foreground">
+              {jobs.length === 0 ? "No positions yet. Create your first job posting!" : "No positions found"}
+            </CardContent></Card>
           )}
         </div>
 
@@ -274,10 +308,17 @@ export default function Jobs() {
             <Card className="sticky top-6">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <Badge variant="secondary" className={statusColors[selectedJob.status]}>{selectedJob.status}</Badge>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                  <Badge variant="secondary" className={statusColors[selectedJob.status || "Draft"]}>{selectedJob.status || "Draft"}</Badge>
+                  <Select value={selectedJob.status || "Draft"} onValueChange={(v) => handleStatusChange(selectedJob.id, v)}>
+                    <SelectTrigger className="h-7 w-24 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["Draft", "Open", "Paused", "Closed"].map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <CardTitle className="text-lg mt-2">{selectedJob.title}</CardTitle>
                 <CardDescription>{selectedJob.department} · {selectedJob.location}</CardDescription>
@@ -290,62 +331,34 @@ export default function Jobs() {
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Salary</p>
-                    <p className="font-medium text-foreground">{selectedJob.salary}</p>
+                    <p className="font-medium text-foreground">{selectedJob.salary || "—"}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Posted</p>
-                    <p className="font-medium text-foreground">{selectedJob.postedDate}</p>
+                    <p className="font-medium text-foreground">{selectedJob.posted_date || "—"}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs">Candidates</p>
-                    <p className="font-medium text-foreground">{selectedJob.candidates}</p>
+                    <p className="text-muted-foreground text-xs">Applicants</p>
+                    <p className="font-medium text-foreground">{candidateCounts[selectedJob.id] || 0}</p>
                   </div>
                 </div>
 
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Pipeline Progress</p>
-                  <Progress value={Math.min((selectedJob.candidates / 30) * 100, 100)} className="h-2" />
-                  <p className="text-xs text-muted-foreground mt-1">{selectedJob.candidates}/30 target</p>
+                  <Progress value={Math.min(((candidateCounts[selectedJob.id] || 0) / 30) * 100, 100)} className="h-2" />
+                  <p className="text-xs text-muted-foreground mt-1">{candidateCounts[selectedJob.id] || 0}/30 target</p>
                 </div>
 
-                <div>
-                  <p className="text-sm font-medium text-foreground mb-1">Description</p>
-                  <p className="text-sm text-muted-foreground">{selectedJob.description}</p>
-                </div>
+                {selectedJob.description && (
+                  <div>
+                    <p className="text-sm font-medium text-foreground mb-1">Description</p>
+                    <p className="text-sm text-muted-foreground">{selectedJob.description}</p>
+                  </div>
+                )}
 
-                <div>
-                  <p className="text-sm font-medium text-foreground mb-2">Linked Candidates</p>
-                  {selectedJob.linkedCandidateIds.length > 0 ? (
-                    <div className="space-y-2">
-                      {selectedJob.linkedCandidateIds.map((cid) => {
-                        const c = mockCandidates.find((mc) => mc.id === cid);
-                        if (!c) return null;
-                        return (
-                          <div key={c.id} className="flex items-center justify-between p-2 rounded-md bg-muted/40">
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-7 w-7">
-                                <AvatarFallback className="bg-secondary text-[10px] font-medium">{c.avatar}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="text-xs font-medium text-foreground">{c.name}</p>
-                                <p className="text-[10px] text-muted-foreground">{c.stage}</p>
-                              </div>
-                            </div>
-                            <span className={`text-xs font-bold ${c.score >= 80 ? "text-success" : c.score >= 60 ? "text-warning" : "text-destructive"}`}>
-                              {c.score}%
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">No candidates linked yet</p>
-                  )}
-                </div>
-
-                <Button variant="outline" size="sm" className="w-full gap-1.5">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  View Full Posting
+                <Button variant="outline" size="sm" className="w-full gap-1.5"
+                  onClick={() => window.open(`/careers/`, "_blank")}>
+                  <ExternalLink className="h-3.5 w-3.5" />View on Career Page
                 </Button>
               </CardContent>
             </Card>
