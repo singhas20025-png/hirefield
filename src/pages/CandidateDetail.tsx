@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, Mail, Phone, MapPin, Briefcase, GraduationCap, Calendar,
-  Star, CheckCircle2, Clock, Circle, Save, Pencil, X, Plus,
+  Star, CheckCircle2, Clock, Circle, Save, Pencil, X, Plus, FileText, Upload, Trash2, ExternalLink,
 } from "lucide-react";
 import { stageColors } from "@/pages/Candidates";
 import { useToast } from "@/hooks/use-toast";
