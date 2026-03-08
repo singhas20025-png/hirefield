@@ -11,9 +11,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, Mail, Phone, MapPin, Briefcase, GraduationCap, Calendar,
-  Star, CheckCircle2, Clock, Circle, Save,
+  Star, CheckCircle2, Clock, Circle, Save, Pencil, X, Plus,
 } from "lucide-react";
 import { stageColors } from "@/pages/Candidates";
 import { useToast } from "@/hooks/use-toast";
