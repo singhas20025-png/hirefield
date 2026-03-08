@@ -1,24 +1,33 @@
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, Mail, Phone, MapPin, Briefcase, GraduationCap, Calendar,
-  Star, Brain, Sparkles, TrendingUp, CheckCircle2, Clock, Circle,
+  Star, CheckCircle2, Clock, Circle, Save,
 } from "lucide-react";
-import {
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  ResponsiveContainer,
-} from "recharts";
-import { getCandidateDetail, getCandidateAI } from "@/lib/candidate-detail-data";
-import { stageColors } from "@/lib/mock-data";
+import { stageColors } from "@/pages/Candidates";
+import { useToast } from "@/hooks/use-toast";
+import type { Candidate } from "@/pages/Candidates";
+
+const stages = ["Screening", "Assessment", "Interview", "Offer", "Hired", "Rejected"];
+
+function getInitials(name: string) {
+  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+}
 
 const statusIcon = (status: string) => {
   if (status === "Completed") return <CheckCircle2 className="h-3.5 w-3.5 text-success" />;
-  if (status === "Upcoming") return <Clock className="h-3.5 w-3.5 text-warning" />;
+  if (status === "Upcoming" || status === "Scheduled") return <Clock className="h-3.5 w-3.5 text-warning" />;
   return <Circle className="h-3.5 w-3.5 text-muted-foreground" />;
 };
 
@@ -27,10 +36,95 @@ const ratingStars = (rating: number) =>
     <Star key={i} className={`h-3.5 w-3.5 ${i < rating ? "fill-warning text-warning" : "text-muted-foreground/30"}`} />
   ));
 
+interface Interview {
+  id: string;
+  type: string | null;
+  date: string;
+  time: string | null;
+  interviewer: string | null;
+  status: string | null;
+  rating: number | null;
+  notes: string | null;
+  candidate_name: string;
+}
+
+interface Assessment {
+  id: string;
+  name: string;
+  category: string | null;
+  score: number | null;
+  max_score: number | null;
+  completed_at: string | null;
+}
+
 const CandidateDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const candidate = getCandidateDetail(id || "");
-  const aiData = getCandidateAI(id || "");
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+
+  useEffect(() => {
+    if (user && id) loadCandidate();
+  }, [user, id]);
+
+  async function loadCandidate() {
+    setLoading(true);
+    const [candRes, intRes, assRes] = await Promise.all([
+      supabase.from("candidates").select("*").eq("id", id!).eq("user_id", user!.id).maybeSingle(),
+      supabase.from("interviews").select("*").eq("candidate_id", id!).eq("user_id", user!.id).order("date", { ascending: false }),
+      supabase.from("assessments").select("*").eq("candidate_id", id!).eq("user_id", user!.id).order("created_at", { ascending: false }),
+    ]);
+
+    if (candRes.error) {
+      toast({ title: "Error", description: candRes.error.message, variant: "destructive" });
+    } else if (candRes.data) {
+      setCandidate(candRes.data as Candidate);
+      setNotes(candRes.data.notes || "");
+    }
+
+    setInterviews((intRes.data || []) as Interview[]);
+    setAssessments((assRes.data || []) as Assessment[]);
+    setLoading(false);
+  }
+
+  async function handleStageChange(newStage: string) {
+    if (!candidate) return;
+    const { error } = await supabase.from("candidates").update({ stage: newStage }).eq("id", candidate.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setCandidate({ ...candidate, stage: newStage });
+    toast({ title: "Stage Updated", description: `Moved to ${newStage}` });
+  }
+
+  async function handleSaveNotes() {
+    if (!candidate) return;
+    setSavingNotes(true);
+    const { error } = await supabase.from("candidates").update({ notes }).eq("id", candidate.id);
+    setSavingNotes(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setCandidate({ ...candidate, notes });
+    toast({ title: "Notes Saved" });
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-40 rounded-lg" />
+        <Skeleton className="h-60 rounded-lg" />
+      </div>
+    );
+  }
 
   if (!candidate) {
     return (
@@ -59,7 +153,7 @@ const CandidateDetail = () => {
           <div className="flex flex-col sm:flex-row gap-6">
             <Avatar className="h-20 w-20 shrink-0">
               <AvatarFallback className="bg-accent/10 text-accent text-xl font-bold">
-                {candidate.avatar}
+                {getInitials(candidate.name)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-3">
@@ -69,34 +163,60 @@ const CandidateDetail = () => {
                   <p className="text-muted-foreground">{candidate.role}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className={stageColors[candidate.stage] || ""}>{candidate.stage}</Badge>
-                  <div className={`text-sm font-bold ${candidate.score >= 80 ? "text-success" : candidate.score >= 60 ? "text-warning" : "text-destructive"}`}>
-                    AI Score: {candidate.score}%
+                  <Select value={candidate.stage} onValueChange={handleStageChange}>
+                    <SelectTrigger className="w-36 h-8">
+                      <Badge variant="secondary" className={stageColors[candidate.stage] || ""}>{candidate.stage}</Badge>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stages.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className={`text-sm font-bold ${(candidate.score ?? 0) >= 80 ? "text-success" : (candidate.score ?? 0) >= 60 ? "text-warning" : "text-destructive"}`}>
+                    Score: {candidate.score ?? "—"}%
                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Mail className="h-3.5 w-3.5" /> {candidate.email}
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="h-3.5 w-3.5" /> {candidate.phone}
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-3.5 w-3.5" /> {candidate.location}
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Briefcase className="h-3.5 w-3.5" /> {candidate.experience}
-                </div>
+                {candidate.email && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5" /> {candidate.email}
+                  </div>
+                )}
+                {candidate.phone && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Phone className="h-3.5 w-3.5" /> {candidate.phone}
+                  </div>
+                )}
+                {candidate.location && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5" /> {candidate.location}
+                  </div>
+                )}
+                {candidate.experience && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Briefcase className="h-3.5 w-3.5" /> {candidate.experience}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <GraduationCap className="h-3.5 w-3.5" /> {candidate.education}
-              </div>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {candidate.skills.map((s) => (
-                  <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
-                ))}
-              </div>
+              {candidate.education && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <GraduationCap className="h-3.5 w-3.5" /> {candidate.education}
+                </div>
+              )}
+              {candidate.skills && candidate.skills.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {candidate.skills.map((s) => (
+                    <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
+                  ))}
+                </div>
+              )}
+              {candidate.source && (
+                <div className="text-xs text-muted-foreground">
+                  Source: {candidate.source} {candidate.applied_date && `· Applied ${candidate.applied_date}`}
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -105,36 +225,35 @@ const CandidateDetail = () => {
       {/* Tabs */}
       <Tabs defaultValue="interviews" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="interviews">Interviews</TabsTrigger>
-          <TabsTrigger value="assessments">Assessments</TabsTrigger>
-          <TabsTrigger value="ai">AI Evaluation</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="interviews">Interviews ({interviews.length})</TabsTrigger>
+          <TabsTrigger value="assessments">Assessments ({assessments.length})</TabsTrigger>
+          <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
         {/* Interviews Tab */}
         <TabsContent value="interviews" className="space-y-3">
-          {candidate.interviewHistory.length === 0 ? (
+          {interviews.length === 0 ? (
             <Card className="border-none shadow-sm">
-              <CardContent className="p-6 text-center text-muted-foreground text-sm">No interviews yet</CardContent>
+              <CardContent className="p-6 text-center text-muted-foreground text-sm">No interviews recorded yet</CardContent>
             </Card>
           ) : (
-            candidate.interviewHistory.map((iv) => (
+            interviews.map((iv) => (
               <Card key={iv.id} className="border-none shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        {statusIcon(iv.status)}
-                        <span className="font-medium text-sm">{iv.type}</span>
-                        <Badge variant="secondary" className="text-xs">{iv.status}</Badge>
+                        {statusIcon(iv.status || "")}
+                        <span className="font-medium text-sm">{iv.type || "Interview"}</span>
+                        <Badge variant="secondary" className="text-xs">{iv.status || "Scheduled"}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        <Calendar className="inline h-3 w-3 mr-1" />{iv.date} · Interviewer: {iv.interviewer}
+                        <Calendar className="inline h-3 w-3 mr-1" />{iv.date} {iv.time && `at ${iv.time}`} {iv.interviewer && `· Interviewer: ${iv.interviewer}`}
                       </p>
                       {iv.notes && <p className="text-sm text-muted-foreground pt-1">"{iv.notes}"</p>}
                     </div>
-                    {iv.rating > 0 && (
-                      <div className="flex gap-0.5 shrink-0">{ratingStars(iv.rating)}</div>
+                    {(iv.rating ?? 0) > 0 && (
+                      <div className="flex gap-0.5 shrink-0">{ratingStars(iv.rating!)}</div>
                     )}
                   </div>
                 </CardContent>
@@ -146,25 +265,25 @@ const CandidateDetail = () => {
         {/* Assessments Tab */}
         <TabsContent value="assessments">
           <div className="grid gap-3 sm:grid-cols-2">
-            {candidate.assessments.length === 0 ? (
+            {assessments.length === 0 ? (
               <Card className="border-none shadow-sm col-span-2">
                 <CardContent className="p-6 text-center text-muted-foreground text-sm">No assessments yet</CardContent>
               </Card>
             ) : (
-              candidate.assessments.map((a) => (
-                <Card key={a.name} className="border-none shadow-sm">
+              assessments.map((a) => (
+                <Card key={a.id} className="border-none shadow-sm">
                   <CardContent className="p-5 space-y-3">
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-medium text-sm">{a.name}</p>
-                        <Badge variant="secondary" className="text-xs mt-1">{a.category}</Badge>
+                        {a.category && <Badge variant="secondary" className="text-xs mt-1">{a.category}</Badge>}
                       </div>
-                      <span className={`text-lg font-bold ${a.score >= 80 ? "text-success" : a.score >= 60 ? "text-warning" : "text-destructive"}`}>
-                        {a.score}
+                      <span className={`text-lg font-bold ${(a.score ?? 0) >= 80 ? "text-success" : (a.score ?? 0) >= 60 ? "text-warning" : "text-destructive"}`}>
+                        {a.score ?? 0}
                       </span>
                     </div>
-                    <Progress value={(a.score / a.maxScore) * 100} className="h-2" />
-                    <p className="text-xs text-muted-foreground">Completed {a.completedAt}</p>
+                    <Progress value={((a.score ?? 0) / (a.max_score ?? 100)) * 100} className="h-2" />
+                    {a.completed_at && <p className="text-xs text-muted-foreground">Completed {new Date(a.completed_at).toLocaleDateString()}</p>}
                   </CardContent>
                 </Card>
               ))
@@ -172,129 +291,20 @@ const CandidateDetail = () => {
           </div>
         </TabsContent>
 
-        {/* AI Evaluation Tab */}
-        <TabsContent value="ai">
-          {aiData ? (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {/* Metrics */}
-              <div className="lg:col-span-2 grid gap-4 sm:grid-cols-3">
-                <Card className="border-none shadow-sm">
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className="p-2.5 rounded-lg bg-accent/10 text-accent"><TrendingUp className="h-5 w-5" /></div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">Predicted Success</p>
-                      <p className="text-2xl font-bold">{aiData.predictedSuccess}%</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="border-none shadow-sm">
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className="p-2.5 rounded-lg bg-info/10 text-info"><Brain className="h-5 w-5" /></div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">Overall AI Score</p>
-                      <p className="text-2xl font-bold">{aiData.overallScore}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="border-none shadow-sm">
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className="p-2.5 rounded-lg bg-success/10 text-success"><Sparkles className="h-5 w-5" /></div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">Recommendation</p>
-                      <Badge variant="secondary" className={
-                        aiData.recommendation === "Strong Hire" ? "bg-success/15 text-success" :
-                        aiData.recommendation === "Hire" ? "bg-accent/15 text-accent" :
-                        "bg-destructive/15 text-destructive"
-                      }>{aiData.recommendation}</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Radar */}
-              <Card className="border-none shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Brain className="h-4 w-4 text-accent" /> Talent DNA
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={280}>
-                    <RadarChart data={aiData.dimensions} cx="50%" cy="50%" outerRadius="75%">
-                      <PolarGrid stroke="hsl(var(--border))" />
-                      <PolarAngleAxis dataKey="trait" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                      <Radar dataKey="score" stroke="hsl(var(--accent))" fill="hsl(var(--accent))" fillOpacity={0.2} strokeWidth={2} />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Personality + Insights */}
-              <div className="space-y-4">
-                <Card className="border-none shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold">Personality Profile</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {Object.entries(aiData.personality).map(([key, val]) => (
-                      <div key={key} className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="font-medium">{key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())}</span>
-                          <span className="text-muted-foreground">{val}/100</span>
-                        </div>
-                        <Progress value={val} className="h-2" />
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-                <Card className="border-none shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-accent" /> Key Insights
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {aiData.insights.map((insight, i) => (
-                      <div key={i} className="flex gap-3 items-start">
-                        <div className="mt-0.5 h-5 w-5 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                          <Sparkles className="h-2.5 w-2.5 text-accent" />
-                        </div>
-                        <p className="text-sm text-muted-foreground">{insight}</p>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          ) : (
-            <Card className="border-none shadow-sm">
-              <CardContent className="p-6 text-center text-muted-foreground text-sm">
-                AI evaluation not yet available for this candidate.
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Timeline Tab */}
-        <TabsContent value="timeline">
+        {/* Notes Tab */}
+        <TabsContent value="notes">
           <Card className="border-none shadow-sm">
-            <CardContent className="p-6">
-              <div className="relative pl-6 space-y-6">
-                <div className="absolute left-[7px] top-2 bottom-2 w-px bg-border" />
-                {candidate.timeline.map((t, i) => (
-                  <div key={i} className="relative">
-                    <div className="absolute -left-6 top-0.5 h-3.5 w-3.5 rounded-full border-2 border-accent bg-background" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{t.event}</span>
-                        <span className="text-xs text-muted-foreground">{t.date}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-0.5">{t.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <CardContent className="p-6 space-y-4">
+              <Textarea
+                placeholder="Add notes about this candidate..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={6}
+                className="resize-none"
+              />
+              <Button onClick={handleSaveNotes} disabled={savingNotes} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                <Save className="h-4 w-4 mr-2" />{savingNotes ? "Saving..." : "Save Notes"}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
