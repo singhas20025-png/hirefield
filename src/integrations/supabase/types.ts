@@ -394,6 +394,7 @@ export type Database = {
           description: string | null
           id: string
           location: string | null
+          pipeline_stages: Json | null
           posted_date: string | null
           salary: string | null
           status: string | null
@@ -408,6 +409,7 @@ export type Database = {
           description?: string | null
           id?: string
           location?: string | null
+          pipeline_stages?: Json | null
           posted_date?: string | null
           salary?: string | null
           status?: string | null
@@ -422,6 +424,7 @@ export type Database = {
           description?: string | null
           id?: string
           location?: string | null
+          pipeline_stages?: Json | null
           posted_date?: string | null
           salary?: string | null
           status?: string | null
@@ -473,6 +476,42 @@ export type Database = {
           push_offer_accepted?: boolean | null
           push_team_mention?: boolean | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          link: string | null
+          message: string
+          metadata: Json | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message: string
+          metadata?: Json | null
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string
+          metadata?: Json | null
+          read?: boolean
+          title?: string
+          type?: string
           user_id?: string
         }
         Relationships: []
