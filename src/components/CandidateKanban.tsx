@@ -1,15 +1,13 @@
-import { useState } from "react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { mockCandidates, stageColors } from "@/lib/mock-data";
 import { useToast } from "@/hooks/use-toast";
+import type { Candidate } from "@/pages/Candidates";
+import { stageColors } from "@/pages/Candidates";
 
 const PIPELINE_STAGES = ["Screening", "Assessment", "Interview", "Offer", "Hired", "Rejected"] as const;
-
-type Candidate = (typeof mockCandidates)[number];
 
 const stageHeaderColors: Record<string, string> = {
   Screening: "bg-info",
@@ -20,9 +18,17 @@ const stageHeaderColors: Record<string, string> = {
   Rejected: "bg-destructive",
 };
 
-export function CandidateKanban() {
+function getInitials(name: string) {
+  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+}
+
+interface CandidateKanbanProps {
+  candidates: Candidate[];
+  onStageChange: (candidateId: string, newStage: string) => Promise<void>;
+}
+
+export function CandidateKanban({ candidates, onStageChange }: CandidateKanbanProps) {
   const { toast } = useToast();
-  const [candidates, setCandidates] = useState<Candidate[]>([...mockCandidates]);
 
   const grouped = PIPELINE_STAGES.reduce(
     (acc, stage) => {
@@ -32,7 +38,7 @@ export function CandidateKanban() {
     {} as Record<string, Candidate[]>,
   );
 
-  const onDragEnd = (result: DropResult) => {
+  const onDragEnd = async (result: DropResult) => {
     const { draggableId, destination } = result;
     if (!destination) return;
 
@@ -40,10 +46,7 @@ export function CandidateKanban() {
     const candidate = candidates.find((c) => c.id === draggableId);
     if (!candidate || candidate.stage === newStage) return;
 
-    setCandidates((prev) =>
-      prev.map((c) => (c.id === draggableId ? { ...c, stage: newStage } : c)),
-    );
-
+    await onStageChange(draggableId, newStage);
     toast({
       title: "Stage Updated",
       description: `${candidate.name} moved to ${newStage}`,
@@ -87,7 +90,7 @@ export function CandidateKanban() {
                                 <div className="flex items-center gap-2">
                                   <Avatar className="h-8 w-8">
                                     <AvatarFallback className="bg-secondary text-xs font-medium">
-                                      {candidate.avatar}
+                                      {getInitials(candidate.name)}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div className="min-w-0">
@@ -100,17 +103,17 @@ export function CandidateKanban() {
                                   </div>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-muted-foreground">{candidate.source}</span>
+                                  <span className="text-xs text-muted-foreground">{candidate.source || "—"}</span>
                                   <span
                                     className={`text-xs font-bold ${
-                                      candidate.score >= 80
+                                      (candidate.score ?? 0) >= 80
                                         ? "text-success"
-                                        : candidate.score >= 60
+                                        : (candidate.score ?? 0) >= 60
                                           ? "text-warning"
                                           : "text-destructive"
                                     }`}
                                   >
-                                    {candidate.score}%
+                                    {candidate.score ?? "—"}%
                                   </span>
                                 </div>
                               </CardContent>
