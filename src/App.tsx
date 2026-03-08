@@ -20,6 +20,7 @@ import Jobs from "./pages/Jobs";
 import Compare from "./pages/Compare";
 import Reports from "./pages/Reports";
 import CompanyProfileSetup from "./pages/CompanyProfileSetup";
+import ApplicationsInbox from "./pages/ApplicationsInbox";
 import CareerPage from "./pages/CareerPage";
 import ApplyJob from "./pages/ApplyJob";
 import CandidateAuth from "./pages/CandidateAuth";
