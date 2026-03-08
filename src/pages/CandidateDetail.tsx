@@ -135,7 +135,52 @@ const CandidateDetail = () => {
     toast({ title: "Stage Updated", description: `Moved to ${newStage}` });
   }
 
-  async function handleSaveNotes() {
+  async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !candidate || !user) return;
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast({ title: "File too large", description: "Maximum file size is 10MB", variant: "destructive" });
+      return;
+    }
+    const allowed = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+    if (!allowed.includes(file.type)) {
+      toast({ title: "Invalid file type", description: "Please upload a PDF or Word document", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    const path = `${user.id}/${candidate.id}/${file.name}`;
+    // Remove old file if exists
+    if (resumeName) {
+      await supabase.storage.from("resumes").remove([`${user.id}/${candidate.id}/${resumeName}`]);
+    }
+    const { error } = await supabase.storage.from("resumes").upload(path, file, { upsert: true });
+    if (error) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    const { data: urlData } = await supabase.storage.from("resumes").createSignedUrl(path, 3600);
+    setResumeName(file.name);
+    setResumeUrl(urlData?.signedUrl || null);
+    setUploading(false);
+    toast({ title: "Resume Uploaded", description: file.name });
+    // Reset input
+    e.target.value = "";
+  }
+
+  async function handleResumeDelete() {
+    if (!candidate || !user || !resumeName) return;
+    const { error } = await supabase.storage.from("resumes").remove([`${user.id}/${candidate.id}/${resumeName}`]);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setResumeName(null);
+    setResumeUrl(null);
+    toast({ title: "Resume Removed" });
+  }
+
     if (!candidate) return;
     setSavingNotes(true);
     const { error } = await supabase.from("candidates").update({ notes }).eq("id", candidate.id);
