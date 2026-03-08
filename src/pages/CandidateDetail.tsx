@@ -91,8 +91,17 @@ const CandidateDetail = () => {
     if (candRes.error) {
       toast({ title: "Error", description: candRes.error.message, variant: "destructive" });
     } else if (candRes.data) {
-      setCandidate(candRes.data as Candidate);
-      setNotes(candRes.data.notes || "");
+      const c = candRes.data as Candidate;
+      setCandidate(c);
+      setNotes(c.notes || "");
+      setEditForm({
+        email: c.email || "",
+        phone: c.phone || "",
+        location: c.location || "",
+        experience: c.experience || "",
+        education: c.education || "",
+        skills: (c.skills || []).join(", "),
+      });
     }
 
     setInterviews((intRes.data || []) as Interview[]);
