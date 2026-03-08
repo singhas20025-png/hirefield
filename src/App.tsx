@@ -35,6 +35,7 @@ const App = () => (
             <Route path="/ai-insights" element={<AIInsights />} />
             <Route path="/scheduling" element={<Scheduling />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
