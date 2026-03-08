@@ -119,7 +119,8 @@ export default function Jobs() {
         description: newJob.description || null,
         status: "Draft",
         posted_date: new Date().toISOString().split("T")[0],
-      })
+        pipeline_stages: pipelineStages,
+      } as any)
       .select()
       .single();
 
