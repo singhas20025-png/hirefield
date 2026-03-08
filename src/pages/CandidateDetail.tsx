@@ -69,6 +69,12 @@ const CandidateDetail = () => {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    email: "", phone: "", location: "", experience: "", education: "", skills: "",
+  });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [newSkill, setNewSkill] = useState("");
 
   useEffect(() => {
     if (user && id) loadCandidate();
