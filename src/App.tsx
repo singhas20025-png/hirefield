@@ -16,6 +16,7 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Jobs from "./pages/Jobs";
 import Compare from "./pages/Compare";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
