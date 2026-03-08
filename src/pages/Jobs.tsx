@@ -29,6 +29,7 @@ interface Job {
   description: string | null;
   user_id: string;
   created_at: string;
+  pipeline_stages: string[] | null;
 }
 
 const statusColors: Record<string, string> = {
