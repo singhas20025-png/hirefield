@@ -131,6 +131,7 @@ export default function Jobs() {
 
     setJobs([data as Job, ...jobs]);
     setNewJob({ title: "", department: "Engineering", location: "Remote", type: "Full-time", salary: "", description: "" });
+    setPipelineStages(["Applied", "Screening", "Assessment", "Video Interview", "Final Review", "Offer"]);
     setDialogOpen(false);
     toast({ title: "Job Created", description: `${newJob.title} saved as draft` });
   };
