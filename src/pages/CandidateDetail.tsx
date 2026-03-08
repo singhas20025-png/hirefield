@@ -11,9 +11,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, Mail, Phone, MapPin, Briefcase, GraduationCap, Calendar,
-  Star, CheckCircle2, Clock, Circle, Save,
+  Star, CheckCircle2, Clock, Circle, Save, Pencil, X, Plus,
 } from "lucide-react";
 import { stageColors } from "@/pages/Candidates";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +69,12 @@ const CandidateDetail = () => {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    email: "", phone: "", location: "", experience: "", education: "", skills: "",
+  });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [newSkill, setNewSkill] = useState("");
 
   useEffect(() => {
     if (user && id) loadCandidate();
@@ -83,8 +91,17 @@ const CandidateDetail = () => {
     if (candRes.error) {
       toast({ title: "Error", description: candRes.error.message, variant: "destructive" });
     } else if (candRes.data) {
-      setCandidate(candRes.data as Candidate);
-      setNotes(candRes.data.notes || "");
+      const c = candRes.data as Candidate;
+      setCandidate(c);
+      setNotes(c.notes || "");
+      setEditForm({
+        email: c.email || "",
+        phone: c.phone || "",
+        location: c.location || "",
+        experience: c.experience || "",
+        education: c.education || "",
+        skills: (c.skills || []).join(", "),
+      });
     }
 
     setInterviews((intRes.data || []) as Interview[]);
@@ -114,6 +131,49 @@ const CandidateDetail = () => {
     }
     setCandidate({ ...candidate, notes });
     toast({ title: "Notes Saved" });
+  }
+
+  function startEditing() {
+    if (!candidate) return;
+    setEditForm({
+      email: candidate.email || "",
+      phone: candidate.phone || "",
+      location: candidate.location || "",
+      experience: candidate.experience || "",
+      education: candidate.education || "",
+      skills: (candidate.skills || []).join(", "),
+    });
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    setEditing(false);
+  }
+
+  async function handleSaveProfile() {
+    if (!candidate) return;
+    setSavingProfile(true);
+    const skillsArray = editForm.skills
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    const updates = {
+      email: editForm.email.trim() || null,
+      phone: editForm.phone.trim() || null,
+      location: editForm.location.trim() || null,
+      experience: editForm.experience.trim() || null,
+      education: editForm.education.trim() || null,
+      skills: skillsArray.length > 0 ? skillsArray : null,
+    };
+    const { error } = await supabase.from("candidates").update(updates).eq("id", candidate.id);
+    setSavingProfile(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setCandidate({ ...candidate, ...updates });
+    setEditing(false);
+    toast({ title: "Profile Updated" });
   }
 
   if (loading) {
@@ -163,6 +223,11 @@ const CandidateDetail = () => {
                   <p className="text-muted-foreground">{candidate.role}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {!editing && (
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={startEditing}>
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                  )}
                   <Select value={candidate.stage} onValueChange={handleStageChange}>
                     <SelectTrigger className="w-36 h-8">
                       <Badge variant="secondary" className={stageColors[candidate.stage] || ""}>{candidate.stage}</Badge>
@@ -178,44 +243,117 @@ const CandidateDetail = () => {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                {candidate.email && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="h-3.5 w-3.5" /> {candidate.email}
+
+              {editing ? (
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Email</Label>
+                      <Input
+                        type="email"
+                        placeholder="candidate@email.com"
+                        value={editForm.email}
+                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Phone</Label>
+                      <Input
+                        placeholder="+1 (555) 123-4567"
+                        value={editForm.phone}
+                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Location</Label>
+                      <Input
+                        placeholder="San Francisco, CA"
+                        value={editForm.location}
+                        onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Experience</Label>
+                      <Input
+                        placeholder="5 years"
+                        value={editForm.experience}
+                        onChange={(e) => setEditForm({ ...editForm, experience: e.target.value })}
+                        className="h-9"
+                      />
+                    </div>
                   </div>
-                )}
-                {candidate.phone && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="h-3.5 w-3.5" /> {candidate.phone}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Education</Label>
+                    <Input
+                      placeholder="BS Computer Science, MIT"
+                      value={editForm.education}
+                      onChange={(e) => setEditForm({ ...editForm, education: e.target.value })}
+                      className="h-9"
+                    />
                   </div>
-                )}
-                {candidate.location && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5" /> {candidate.location}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Skills (comma-separated)</Label>
+                    <Input
+                      placeholder="React, TypeScript, Node.js"
+                      value={editForm.skills}
+                      onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })}
+                      className="h-9"
+                    />
                   </div>
-                )}
-                {candidate.experience && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Briefcase className="h-3.5 w-3.5" /> {candidate.experience}
+                  <div className="flex gap-2 pt-1">
+                    <Button onClick={handleSaveProfile} disabled={savingProfile} className="bg-accent text-accent-foreground hover:bg-accent/90" size="sm">
+                      <Save className="h-3.5 w-3.5 mr-1.5" />{savingProfile ? "Saving..." : "Save Changes"}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={cancelEditing}>
+                      <X className="h-3.5 w-3.5 mr-1.5" />Cancel
+                    </Button>
                   </div>
-                )}
-              </div>
-              {candidate.education && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <GraduationCap className="h-3.5 w-3.5" /> {candidate.education}
                 </div>
-              )}
-              {candidate.skills && candidate.skills.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {candidate.skills.map((s) => (
-                    <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
-                  ))}
-                </div>
-              )}
-              {candidate.source && (
-                <div className="text-xs text-muted-foreground">
-                  Source: {candidate.source} {candidate.applied_date && `· Applied ${candidate.applied_date}`}
-                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                    {candidate.email && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="h-3.5 w-3.5" /> {candidate.email}
+                      </div>
+                    )}
+                    {candidate.phone && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5" /> {candidate.phone}
+                      </div>
+                    )}
+                    {candidate.location && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5" /> {candidate.location}
+                      </div>
+                    )}
+                    {candidate.experience && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Briefcase className="h-3.5 w-3.5" /> {candidate.experience}
+                      </div>
+                    )}
+                  </div>
+                  {candidate.education && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <GraduationCap className="h-3.5 w-3.5" /> {candidate.education}
+                    </div>
+                  )}
+                  {candidate.skills && candidate.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {candidate.skills.map((s) => (
+                        <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
+                      ))}
+                    </div>
+                  )}
+                  {candidate.source && (
+                    <div className="text-xs text-muted-foreground">
+                      Source: {candidate.source} {candidate.applied_date && `· Applied ${candidate.applied_date}`}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
