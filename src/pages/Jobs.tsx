@@ -467,6 +467,59 @@ export default function Jobs() {
                   </div>
                 )}
 
+                {/* Edit job dialog */}
+                <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                  <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader><DialogTitle>Edit Position</DialogTitle></DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <div className="space-y-2">
+                        <Label>Job Title</Label>
+                        <Input value={editJob.title}
+                          onChange={(e) => setEditJob({ ...editJob, title: e.target.value })} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Department</Label>
+                          <Select value={editJob.department} onValueChange={(v) => setEditJob({ ...editJob, department: v })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>{departments.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Location</Label>
+                          <Select value={editJob.location} onValueChange={(v) => setEditJob({ ...editJob, location: v })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>{locations.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Employment Type</Label>
+                          <Select value={editJob.type} onValueChange={(v) => setEditJob({ ...editJob, type: v })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>{jobTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Salary Range</Label>
+                          <Input value={editJob.salary}
+                            onChange={(e) => setEditJob({ ...editJob, salary: e.target.value })} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Description</Label>
+                        <Textarea rows={3} value={editJob.description}
+                          onChange={(e) => setEditJob({ ...editJob, description: e.target.value })} />
+                      </div>
+                      <PipelineStagesEditor stages={editPipelineStages} onChange={setEditPipelineStages} />
+                      <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleEditSave}>
+                        Save Changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
                 <Button variant="outline" size="sm" className="w-full gap-1.5"
                   onClick={() => window.open(`/careers/`, "_blank")}>
                   <ExternalLink className="h-3.5 w-3.5" />View on Career Page
