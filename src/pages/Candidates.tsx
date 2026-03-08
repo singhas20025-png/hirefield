@@ -125,6 +125,57 @@ const Candidates = () => {
     );
   }
 
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selected.size === filtered.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filtered.map((c) => c.id)));
+    }
+  }
+
+  async function handleBulkMove() {
+    if (!bulkStage || selected.size === 0) return;
+    const ids = Array.from(selected);
+    const { error } = await supabase
+      .from("candidates")
+      .update({ stage: bulkStage })
+      .in("id", ids);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setCandidates((prev) =>
+      prev.map((c) => (ids.includes(c.id) ? { ...c, stage: bulkStage } : c))
+    );
+    setSelected(new Set());
+    setBulkStage("");
+    toast({ title: "Candidates Moved", description: `${ids.length} candidate(s) moved to ${bulkStage}` });
+  }
+
+  async function handleBulkDelete() {
+    const ids = Array.from(selected);
+    const { error } = await supabase
+      .from("candidates")
+      .delete()
+      .in("id", ids);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setCandidates((prev) => prev.filter((c) => !ids.includes(c.id)));
+    setSelected(new Set());
+    setBulkDeleteOpen(false);
+    toast({ title: "Deleted", description: `${ids.length} candidate(s) removed` });
+  }
+
   const filtered = candidates.filter((c) => {
     const matchSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
