@@ -62,6 +62,9 @@ const Candidates = () => {
   const [newCandidate, setNewCandidate] = useState({
     name: "", role: "", email: "", source: "LinkedIn", stage: "Screening",
   });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkStage, setBulkStage] = useState("");
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (user) loadCandidates();
