@@ -157,6 +157,23 @@ export default function Jobs() {
     toast({ title: "Updated", description: `Status changed to ${newStatus}` });
   };
 
+  const handleUpdatePipeline = async () => {
+    if (!selectedJob) return;
+    const { error } = await supabase
+      .from("jobs")
+      .update({ pipeline_stages: editPipelineStages } as any)
+      .eq("id", selectedJob.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    const updated = { ...selectedJob, pipeline_stages: editPipelineStages };
+    setJobs((prev) => prev.map((j) => j.id === selectedJob.id ? updated : j));
+    setSelectedJob(updated);
+    setEditPipelineOpen(false);
+    toast({ title: "Pipeline Updated", description: "Hiring stages saved successfully" });
+  };
+
   const stats = {
     open: jobs.filter((j) => j.status === "Open").length,
     total: jobs.length,
