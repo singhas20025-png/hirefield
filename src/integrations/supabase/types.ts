@@ -97,6 +97,60 @@ export type Database = {
           },
         ]
       }
+      candidate_profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          email: string
+          experience_years: number | null
+          full_name: string
+          headline: string | null
+          id: string
+          linkedin_url: string | null
+          location: string | null
+          phone: string | null
+          portfolio_url: string | null
+          resume_url: string | null
+          skills: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          email: string
+          experience_years?: number | null
+          full_name: string
+          headline?: string | null
+          id?: string
+          linkedin_url?: string | null
+          location?: string | null
+          phone?: string | null
+          portfolio_url?: string | null
+          resume_url?: string | null
+          skills?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          email?: string
+          experience_years?: number | null
+          full_name?: string
+          headline?: string | null
+          id?: string
+          linkedin_url?: string | null
+          location?: string | null
+          phone?: string | null
+          portfolio_url?: string | null
+          resume_url?: string | null
+          skills?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       candidates: {
         Row: {
           applied_date: string | null
@@ -160,6 +214,63 @@ export type Database = {
         }
         Relationships: []
       }
+      company_profiles: {
+        Row: {
+          brand_color: string | null
+          company_name: string
+          company_size: string | null
+          cover_image_url: string | null
+          created_at: string
+          culture_description: string | null
+          description: string | null
+          headquarters: string | null
+          id: string
+          industry: string | null
+          logo_url: string | null
+          office_photos: string[] | null
+          slug: string
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          brand_color?: string | null
+          company_name: string
+          company_size?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          culture_description?: string | null
+          description?: string | null
+          headquarters?: string | null
+          id?: string
+          industry?: string | null
+          logo_url?: string | null
+          office_photos?: string[] | null
+          slug: string
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          brand_color?: string | null
+          company_name?: string
+          company_size?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          culture_description?: string | null
+          description?: string | null
+          headquarters?: string | null
+          id?: string
+          industry?: string | null
+          logo_url?: string | null
+          office_photos?: string[] | null
+          slug?: string
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       interviews: {
         Row: {
           candidate_id: string | null
@@ -215,6 +326,63 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_applications: {
+        Row: {
+          answers: Json | null
+          candidate_user_id: string
+          company_profile_id: string | null
+          cover_letter: string | null
+          created_at: string
+          id: string
+          job_id: string
+          resume_url: string | null
+          routing_step: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json | null
+          candidate_user_id: string
+          company_profile_id?: string | null
+          cover_letter?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          resume_url?: string | null
+          routing_step?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json | null
+          candidate_user_id?: string
+          company_profile_id?: string | null
+          cover_letter?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          resume_url?: string | null
+          routing_step?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_company_profile_id_fkey"
+            columns: ["company_profile_id"]
+            isOneToOne: false
+            referencedRelation: "company_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
         ]

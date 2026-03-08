@@ -19,6 +19,11 @@ import Settings from "./pages/Settings";
 import Jobs from "./pages/Jobs";
 import Compare from "./pages/Compare";
 import Reports from "./pages/Reports";
+import CompanyProfileSetup from "./pages/CompanyProfileSetup";
+import CareerPage from "./pages/CareerPage";
+import ApplyJob from "./pages/ApplyJob";
+import CandidateAuth from "./pages/CandidateAuth";
+import CandidateDashboard from "./pages/CandidateDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,7 +54,18 @@ const AppRoutes = () => {
 
   return (
     <Routes>
+      {/* Auth routes */}
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+
+      {/* Public career pages (no auth required) */}
+      <Route path="/careers/:slug" element={<CareerPage />} />
+      <Route path="/careers/:slug/apply/:jobId" element={<ApplyJob />} />
+
+      {/* Candidate-facing routes */}
+      <Route path="/candidate/auth" element={<CandidateAuth />} />
+      <Route path="/candidate/dashboard" element={<CandidateDashboard />} />
+
+      {/* Recruiter app (protected) */}
       <Route
         path="/*"
         element={
@@ -68,6 +84,7 @@ const AppRoutes = () => {
                 <Route path="/jobs" element={<Jobs />} />
                 <Route path="/compare" element={<Compare />} />
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/career-portal" element={<CompanyProfileSetup />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
