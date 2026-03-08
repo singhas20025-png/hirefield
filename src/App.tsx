@@ -12,6 +12,7 @@ import Assessments from "./pages/Assessments";
 import AIInsights from "./pages/AIInsights";
 import CandidateDetail from "./pages/CandidateDetail";
 import Scheduling from "./pages/Scheduling";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/assessments" element={<Assessments />} />
             <Route path="/ai-insights" element={<AIInsights />} />
             <Route path="/scheduling" element={<Scheduling />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
