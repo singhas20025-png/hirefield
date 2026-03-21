@@ -1,16 +1,73 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Brain, Code, MessageSquare, Target, Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Brain, Code, MessageSquare, Target, Plus, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 
-const assessments = [
-  { id: "1", title: "Frontend Technical Assessment", type: "Coding", icon: Code, candidates: 12, avgScore: 74, status: "Active" },
-  { id: "2", title: "Leadership & Culture Fit", type: "Psychometric", icon: Brain, candidates: 8, avgScore: 81, status: "Active" },
-  { id: "3", title: "Logical Reasoning Test", type: "Aptitude", icon: Target, candidates: 24, avgScore: 68, status: "Active" },
-  { id: "4", title: "Communication Skills", type: "Behavioral", icon: MessageSquare, candidates: 15, avgScore: 77, status: "Draft" },
-];
+const categoryIcons: Record<string, typeof Code> = {
+  Coding: Code,
+  Psychometric: Brain,
+  Aptitude: Target,
+  Behavioral: MessageSquare,
+};
 
 const Assessments = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ name: "", category: "Coding", max_score: "100" });
+
+  const { data: assessments = [], isLoading } = useQuery({
+    queryKey: ["assessments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("assessments")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase.from("assessments").insert({
+        name: form.name,
+        category: form.category,
+        max_score: parseInt(form.max_score) || 100,
+        user_id: user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assessments"] });
+      toast({ title: "Assessment Created", description: `"${form.name}" has been created.` });
+      setOpen(false);
+      setForm({ name: "", category: "Coding", max_score: "100" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!form.name) {
+      toast({ title: "Missing fields", description: "Assessment name is required.", variant: "destructive" });
+      return;
+    }
+    createMutation.mutate();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -18,44 +75,106 @@ const Assessments = () => {
           <h1 className="text-2xl font-bold tracking-tight">Assessments</h1>
           <p className="text-muted-foreground text-sm mt-1">Aptitude, psychometric & skill tests</p>
         </div>
-        <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Assessment
-        </Button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Assessment
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create Assessment</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label>Assessment Name *</Label>
+                <Input
+                  placeholder="e.g. Frontend Technical Assessment"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["Coding", "Psychometric", "Aptitude", "Behavioral"].map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Max Score</Label>
+                <Input
+                  type="number"
+                  placeholder="100"
+                  value={form.max_score}
+                  onChange={(e) => setForm({ ...form, max_score: e.target.value })}
+                />
+              </div>
+              <Button
+                onClick={handleSubmit}
+                disabled={createMutation.isPending}
+                className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+              >
+                {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Create Assessment
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {assessments.map((a) => (
-          <Card key={a.id} className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="p-2.5 rounded-lg bg-secondary">
-                    <a.icon className="h-5 w-5 text-accent" />
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : assessments.length === 0 ? (
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-8 text-center text-muted-foreground">
+            No assessments yet. Click "Create Assessment" to get started.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {assessments.map((a) => {
+            const Icon = categoryIcons[a.category || "Coding"] || Code;
+            return (
+              <Card key={a.id} className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-lg bg-secondary">
+                        <Icon className="h-5 w-5 text-accent" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{a.name}</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">{a.category}</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className={a.completed_at ? "bg-success/15 text-success" : "bg-accent/15 text-accent"}>
+                      {a.completed_at ? "Completed" : "Active"}
+                    </Badge>
                   </div>
-                  <div>
-                    <p className="font-medium">{a.title}</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">{a.type}</p>
+                  <div className="flex items-center gap-6 mt-4 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Score</p>
+                      <p className="font-semibold">{a.score ?? "—"} / {a.max_score}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Created</p>
+                      <p className="font-semibold">{new Date(a.created_at).toLocaleDateString()}</p>
+                    </div>
                   </div>
-                </div>
-                <Badge variant="secondary" className={a.status === "Active" ? "bg-success/15 text-success" : ""}>
-                  {a.status}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-6 mt-4 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground">Candidates</p>
-                  <p className="font-semibold">{a.candidates}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Avg Score</p>
-                  <p className="font-semibold">{a.avgScore}%</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
