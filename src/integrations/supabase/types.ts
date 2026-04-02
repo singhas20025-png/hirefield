@@ -343,6 +343,9 @@ export type Database = {
           routing_step: string | null
           status: string
           updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
           answers?: Json | null
@@ -356,6 +359,9 @@ export type Database = {
           routing_step?: string | null
           status?: string
           updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
           answers?: Json | null
@@ -369,6 +375,9 @@ export type Database = {
           routing_step?: string | null
           status?: string
           updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: [
           {

@@ -1,0 +1,1 @@
+ALTER TABLE public.job_applications ADD COLUMN utm_source text DEFAULT NULL, ADD COLUMN utm_medium text DEFAULT NULL, ADD COLUMN utm_campaign text DEFAULT NULL;
