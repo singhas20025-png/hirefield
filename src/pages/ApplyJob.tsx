@@ -86,7 +86,7 @@ export default function ApplyJob() {
         .eq("user_id", job.user_id)
         .single();
 
-      // Create application
+      // Create application with UTM tracking
       const { error } = await supabase.from("job_applications").insert({
         job_id: job.id,
         candidate_user_id: user.id,
@@ -95,7 +95,10 @@ export default function ApplyJob() {
         cover_letter: coverLetter || null,
         status: "submitted",
         routing_step: "applied",
-      });
+        utm_source: searchParams.get("utm_source") || null,
+        utm_medium: searchParams.get("utm_medium") || null,
+        utm_campaign: searchParams.get("utm_campaign") || null,
+      } as any);
 
       if (error) {
         if (error.code === "23505") {
