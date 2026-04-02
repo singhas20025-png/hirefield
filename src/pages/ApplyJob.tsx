@@ -26,6 +26,7 @@ interface Job {
 
 export default function ApplyJob() {
   const { slug, jobId } = useParams<{ slug: string; jobId: string }>();
+  const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
