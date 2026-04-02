@@ -329,14 +329,15 @@ export default function CompanyProfileSetup() {
                         </div>
 
                         <div className="space-y-1.5">
-                          <Label className="text-xs text-muted-foreground">Direct Apply Link</Label>
+                          <Label className="text-xs text-muted-foreground">Direct Apply Link (with UTM tracking)</Label>
                           <div className="flex items-center gap-2">
-                            <code className="text-xs bg-muted px-2 py-1.5 rounded flex-1 truncate">{getApplyUrl(job.id)}</code>
-                            <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => copyToClipboard(getApplyUrl(job.id), "Apply link")}>
+                            <code className="text-xs bg-muted px-2 py-1.5 rounded flex-1 truncate">{getApplyUrl(job.id, "direct")}</code>
+                            <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => copyToClipboard(getApplyUrl(job.id, "direct"), "Apply link")}>
                               <Copy className="h-3.5 w-3.5" />
                               Copy Link
                             </Button>
                           </div>
+                          <p className="text-xs text-muted-foreground">Tip: Change <code className="bg-muted px-1 rounded">utm_source=direct</code> to <code className="bg-muted px-1 rounded">utm_source=linkedin</code> when posting on LinkedIn</p>
                         </div>
 
                         <div className="space-y-1.5">
