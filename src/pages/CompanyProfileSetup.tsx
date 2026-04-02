@@ -113,13 +113,17 @@ export default function CompanyProfileSetup() {
   const origin = window.location.origin;
   const careerPageUrl = `${origin}/careers/${profile.slug}`;
 
-  const getApplyUrl = (jobId: string) => `${origin}/careers/${profile.slug}/apply/${jobId}`;
+  const getApplyUrl = (jobId: string, source?: string) => {
+    const base = `${origin}/careers/${profile.slug}/apply/${jobId}`;
+    if (!source) return base;
+    return `${base}?utm_source=${source}&utm_medium=referral&utm_campaign=external_apply`;
+  };
 
   const getApplyButtonSnippet = (job: JobListing) =>
-    `<!-- HireField Apply Button for "${job.title}" -->\n<a href="${getApplyUrl(job.id)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:12px 28px;background:${profile.brand_color};color:#fff;font-family:system-ui,sans-serif;font-size:16px;font-weight:600;border-radius:8px;text-decoration:none;transition:opacity 0.2s" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Apply on HireField</a>`;
+    `<!-- HireField Apply Button for "${job.title}" -->\n<a href="${getApplyUrl(job.id, "website")}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:12px 28px;background:${profile.brand_color};color:#fff;font-family:system-ui,sans-serif;font-size:16px;font-weight:600;border-radius:8px;text-decoration:none;transition:opacity 0.2s" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Apply on HireField</a>`;
 
   const getAllJobsSnippet = () =>
-    `<!-- HireField Career Page Widget -->\n<div style="font-family:system-ui,sans-serif">\n  <h3 style="margin-bottom:16px;font-size:20px;font-weight:700">Open Positions</h3>\n${jobs.map(j => `  <a href="${getApplyUrl(j.id)}" target="_blank" rel="noopener noreferrer" style="display:block;padding:16px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;color:inherit;transition:box-shadow 0.2s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">\n    <div style="font-weight:600;font-size:16px;color:#111">${j.title}</div>\n    ${j.department ? `<div style="font-size:13px;color:#6b7280;margin-top:4px">${j.department}</div>` : ''}\n    <span style="display:inline-block;margin-top:8px;padding:6px 16px;background:${profile.brand_color};color:#fff;border-radius:6px;font-size:14px;font-weight:500">Apply Now →</span>\n  </a>`).join('\n')}\n  <p style="margin-top:16px;font-size:12px;color:#9ca3af">Powered by <a href="${origin}" style="color:${profile.brand_color};text-decoration:none">HireField</a></p>\n</div>`;
+    `<!-- HireField Career Page Widget -->\n<div style="font-family:system-ui,sans-serif">\n  <h3 style="margin-bottom:16px;font-size:20px;font-weight:700">Open Positions</h3>\n${jobs.map(j => `  <a href="${getApplyUrl(j.id, "widget")}" target="_blank" rel="noopener noreferrer" style="display:block;padding:16px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;color:inherit;transition:box-shadow 0.2s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">\n    <div style="font-weight:600;font-size:16px;color:#111">${j.title}</div>\n    ${j.department ? `<div style="font-size:13px;color:#6b7280;margin-top:4px">${j.department}</div>` : ''}\n    <span style="display:inline-block;margin-top:8px;padding:6px 16px;background:${profile.brand_color};color:#fff;border-radius:6px;font-size:14px;font-weight:500">Apply Now →</span>\n  </a>`).join('\n')}\n  <p style="margin-top:16px;font-size:12px;color:#9ca3af">Powered by <a href="${origin}" style="color:${profile.brand_color};text-decoration:none">HireField</a></p>\n</div>`;
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -325,14 +329,15 @@ export default function CompanyProfileSetup() {
                         </div>
 
                         <div className="space-y-1.5">
-                          <Label className="text-xs text-muted-foreground">Direct Apply Link</Label>
+                          <Label className="text-xs text-muted-foreground">Direct Apply Link (with UTM tracking)</Label>
                           <div className="flex items-center gap-2">
-                            <code className="text-xs bg-muted px-2 py-1.5 rounded flex-1 truncate">{getApplyUrl(job.id)}</code>
-                            <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => copyToClipboard(getApplyUrl(job.id), "Apply link")}>
+                            <code className="text-xs bg-muted px-2 py-1.5 rounded flex-1 truncate">{getApplyUrl(job.id, "direct")}</code>
+                            <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => copyToClipboard(getApplyUrl(job.id, "direct"), "Apply link")}>
                               <Copy className="h-3.5 w-3.5" />
                               Copy Link
                             </Button>
                           </div>
+                          <p className="text-xs text-muted-foreground">Tip: Change <code className="bg-muted px-1 rounded">utm_source=direct</code> to <code className="bg-muted px-1 rounded">utm_source=linkedin</code> when posting on LinkedIn</p>
                         </div>
 
                         <div className="space-y-1.5">

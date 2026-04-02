@@ -25,6 +25,8 @@ interface Application {
   updated_at: string;
   candidate_user_id: string;
   job_id: string;
+  utm_source: string | null;
+  utm_medium: string | null;
   jobs: {
     title: string;
     department: string | null;
@@ -321,6 +323,11 @@ export default function ApplicationsInbox() {
                           <Calendar className="h-3 w-3" />
                           {new Date(app.created_at).toLocaleDateString()}
                         </span>
+                        {(app as any).utm_source && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 capitalize">
+                            via {(app as any).utm_source}
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
