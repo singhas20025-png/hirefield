@@ -25,6 +25,8 @@ interface Application {
   updated_at: string;
   candidate_user_id: string;
   job_id: string;
+  utm_source: string | null;
+  utm_medium: string | null;
   jobs: {
     title: string;
     department: string | null;
