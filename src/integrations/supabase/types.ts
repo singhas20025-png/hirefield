@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      assessment_assignments: {
+        Row: {
+          assessment_id: string
+          assigned_at: string
+          candidate_email: string
+          candidate_name: string | null
+          id: string
+          score: number | null
+          status: string
+          submitted_answers: Json | null
+          submitted_at: string | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          assessment_id: string
+          assigned_at?: string
+          candidate_email: string
+          candidate_name?: string | null
+          id?: string
+          score?: number | null
+          status?: string
+          submitted_answers?: Json | null
+          submitted_at?: string | null
+          token?: string
+          user_id: string
+        }
+        Update: {
+          assessment_id?: string
+          assigned_at?: string
+          candidate_email?: string
+          candidate_name?: string | null
+          id?: string
+          score?: number | null
+          status?: string
+          submitted_answers?: Json | null
+          submitted_at?: string | null
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_assignments_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessments: {
         Row: {
           candidate_id: string | null
@@ -23,6 +73,7 @@ export type Database = {
           id: string
           max_score: number | null
           name: string
+          questions: Json | null
           score: number | null
           user_id: string
         }
@@ -34,6 +85,7 @@ export type Database = {
           id?: string
           max_score?: number | null
           name: string
+          questions?: Json | null
           score?: number | null
           user_id: string
         }
@@ -45,6 +97,7 @@ export type Database = {
           id?: string
           max_score?: number | null
           name?: string
+          questions?: Json | null
           score?: number | null
           user_id?: string
         }
@@ -279,6 +332,7 @@ export type Database = {
           date: string
           id: string
           interviewer: string | null
+          meeting_url: string | null
           notes: string | null
           rating: number | null
           role: string | null
@@ -295,6 +349,7 @@ export type Database = {
           date: string
           id?: string
           interviewer?: string | null
+          meeting_url?: string | null
           notes?: string | null
           rating?: number | null
           role?: string | null
@@ -311,6 +366,7 @@ export type Database = {
           date?: string
           id?: string
           interviewer?: string | null
+          meeting_url?: string | null
           notes?: string | null
           rating?: number | null
           role?: string | null
