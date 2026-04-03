@@ -6,11 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Brain, Code, MessageSquare, Target, Plus, Loader2 } from "lucide-react";
+import { Brain, Code, MessageSquare, Target, Plus, Loader2, Send, Edit, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { AssessmentQuestionEditor, type Question } from "@/components/AssessmentQuestionEditor";
+import { AssessmentSendDialog } from "@/components/AssessmentSendDialog";
 
 const categoryIcons: Record<string, typeof Code> = {
   Coding: Code,
@@ -24,6 +26,9 @@ const Assessments = () => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", category: "Coding", max_score: "100" });
+  const [editingAssessment, setEditingAssessment] = useState<any>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [sendTarget, setSendTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { data: assessments = [], isLoading } = useQuery({
     queryKey: ["assessments"],
@@ -34,6 +39,25 @@ const Assessments = () => {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch assignment counts
+  const { data: assignmentCounts = {} } = useQuery({
+    queryKey: ["assessment-assignment-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("assessment_assignments" as any)
+        .select("assessment_id, status");
+      if (error) return {};
+      const counts: Record<string, { total: number; submitted: number }> = {};
+      (data as any[]).forEach((a: any) => {
+        if (!counts[a.assessment_id]) counts[a.assessment_id] = { total: 0, submitted: 0 };
+        counts[a.assessment_id].total++;
+        if (a.status === "submitted") counts[a.assessment_id].submitted++;
+      });
+      return counts;
     },
     enabled: !!user,
   });
@@ -60,12 +84,36 @@ const Assessments = () => {
     },
   });
 
+  const saveQuestionsMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingAssessment) return;
+      const { error } = await supabase
+        .from("assessments")
+        .update({ questions: questions as any })
+        .eq("id", editingAssessment.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assessments"] });
+      toast({ title: "Questions Saved", description: "Assessment questions updated." });
+      setEditingAssessment(null);
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
   const handleSubmit = () => {
     if (!form.name) {
       toast({ title: "Missing fields", description: "Assessment name is required.", variant: "destructive" });
       return;
     }
     createMutation.mutate();
+  };
+
+  const openQuestionEditor = (assessment: any) => {
+    setEditingAssessment(assessment);
+    setQuestions((assessment.questions as Question[]) || []);
   };
 
   return (
@@ -128,6 +176,34 @@ const Assessments = () => {
         </Dialog>
       </div>
 
+      {/* Question Editor Dialog */}
+      <Dialog open={!!editingAssessment} onOpenChange={(o) => !o && setEditingAssessment(null)}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Questions — {editingAssessment?.name}</DialogTitle>
+          </DialogHeader>
+          <AssessmentQuestionEditor questions={questions} onChange={setQuestions} />
+          <Button
+            onClick={() => saveQuestionsMutation.mutate()}
+            disabled={saveQuestionsMutation.isPending}
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+          >
+            {saveQuestionsMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Save Questions
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Dialog */}
+      {sendTarget && (
+        <AssessmentSendDialog
+          open={!!sendTarget}
+          onOpenChange={(o) => !o && setSendTarget(null)}
+          assessmentId={sendTarget.id}
+          assessmentName={sendTarget.name}
+        />
+      )}
+
       {isLoading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -142,8 +218,10 @@ const Assessments = () => {
         <div className="grid gap-4 sm:grid-cols-2">
           {assessments.map((a) => {
             const Icon = categoryIcons[a.category || "Coding"] || Code;
+            const qCount = ((a as any).questions as any[] || []).length;
+            const counts = (assignmentCounts as any)[a.id];
             return (
-              <Card key={a.id} className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+              <Card key={a.id} className="border-none shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
@@ -161,13 +239,32 @@ const Assessments = () => {
                   </div>
                   <div className="flex items-center gap-6 mt-4 text-sm">
                     <div>
-                      <p className="text-xs text-muted-foreground">Score</p>
-                      <p className="font-semibold">{a.score ?? "—"} / {a.max_score}</p>
+                      <p className="text-xs text-muted-foreground">Questions</p>
+                      <p className="font-semibold">{qCount}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Created</p>
-                      <p className="font-semibold">{new Date(a.created_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground">Max Score</p>
+                      <p className="font-semibold">{a.max_score}</p>
                     </div>
+                    {counts && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Submissions</p>
+                        <p className="font-semibold">{counts.submitted}/{counts.total}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-4">
+                    <Button variant="outline" size="sm" onClick={() => openQuestionEditor(a)}>
+                      <Edit className="h-3 w-3 mr-1" /> Questions
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-accent text-accent-foreground hover:bg-accent/90"
+                      onClick={() => setSendTarget({ id: a.id, name: a.name })}
+                      disabled={qCount === 0}
+                    >
+                      <Send className="h-3 w-3 mr-1" /> Send to Candidate
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

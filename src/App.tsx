@@ -25,6 +25,7 @@ import CareerPage from "./pages/CareerPage";
 import ApplyJob from "./pages/ApplyJob";
 import CandidateAuth from "./pages/CandidateAuth";
 import CandidateDashboard from "./pages/CandidateDashboard";
+import TakeAssessment from "./pages/TakeAssessment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const AppRoutes = () => {
       {/* Public career pages (no auth required) */}
       <Route path="/careers/:slug" element={<CareerPage />} />
       <Route path="/careers/:slug/apply/:jobId" element={<ApplyJob />} />
+      <Route path="/assessment/:token" element={<TakeAssessment />} />
 
       {/* Candidate-facing routes */}
       <Route path="/candidate/auth" element={<CandidateAuth />} />
