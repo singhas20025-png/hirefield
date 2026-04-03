@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Video, Calendar, Clock, Plus, Loader2 } from "lucide-react";
+import { Video, Calendar, Clock, Plus, Loader2, ExternalLink, Link2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,7 @@ const Interviews = () => {
     date: "",
     time: "",
     interviewer: "",
+    meeting_url: "",
   });
 
   const { data: interviews = [], isLoading } = useQuery({
@@ -56,16 +57,17 @@ const Interviews = () => {
         date: form.date,
         time: form.time || null,
         interviewer: form.interviewer || null,
+        meeting_url: form.meeting_url || null,
         status: "Scheduled",
         user_id: user.id,
-      });
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       toast({ title: "Interview Scheduled", description: `${form.candidate_name} scheduled for ${form.date}` });
       setOpen(false);
-      setForm({ candidate_name: "", role: "", type: "Technical", date: "", time: "", interviewer: "" });
+      setForm({ candidate_name: "", role: "", type: "Technical", date: "", time: "", interviewer: "", meeting_url: "" });
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -85,6 +87,15 @@ const Interviews = () => {
     const today = new Date().toISOString().split("T")[0];
     if (interview.date >= today) return "Upcoming";
     return interview.status || "Scheduled";
+  };
+
+  const handleJoin = (interview: any) => {
+    const meetingUrl = (interview as any).meeting_url;
+    if (meetingUrl) {
+      window.open(meetingUrl, "_blank");
+    } else {
+      navigate("/video-interview");
+    }
   };
 
   return (
@@ -159,6 +170,18 @@ const Interviews = () => {
                   onChange={(e) => setForm({ ...form, interviewer: e.target.value })}
                 />
               </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Link2 className="h-3.5 w-3.5" />
+                  Meeting URL (optional)
+                </Label>
+                <Input
+                  placeholder="https://zoom.us/j/... or Google Meet link"
+                  value={form.meeting_url}
+                  onChange={(e) => setForm({ ...form, meeting_url: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">Leave empty to use HireField's built-in video. Paste a Zoom or Google Meet link to use external.</p>
+              </div>
               <Button
                 onClick={handleSubmit}
                 disabled={createMutation.isPending}
@@ -186,6 +209,7 @@ const Interviews = () => {
         <div className="grid gap-3">
           {interviews.map((interview) => {
             const displayStatus = getStatus(interview);
+            const meetingUrl = (interview as any).meeting_url;
             return (
               <Card key={interview.id} className="border-none shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-5">
@@ -206,6 +230,12 @@ const Interviews = () => {
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
                               {interview.time}
+                            </span>
+                          )}
+                          {meetingUrl && (
+                            <span className="flex items-center gap-1 text-accent">
+                              <ExternalLink className="h-3 w-3" />
+                              External
                             </span>
                           )}
                         </div>
@@ -229,9 +259,9 @@ const Interviews = () => {
                         <Button
                           size="sm"
                           className="bg-accent text-accent-foreground hover:bg-accent/90"
-                          onClick={() => navigate("/video-interview")}
+                          onClick={() => handleJoin(interview)}
                         >
-                          <Video className="h-3 w-3 mr-1" />
+                          {meetingUrl ? <ExternalLink className="h-3 w-3 mr-1" /> : <Video className="h-3 w-3 mr-1" />}
                           Join
                         </Button>
                       )}
