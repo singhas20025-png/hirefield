@@ -56,6 +56,9 @@ const AppRoutes = () => {
 
   return (
     <Routes>
+      {/* Public landing page */}
+      <Route path="/index" element={<Index />} />
+
       {/* Auth routes */}
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
 
