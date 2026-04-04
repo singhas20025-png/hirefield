@@ -38,7 +38,7 @@ export default function Auth() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate("/");
+        navigate("/dashboard");
       }
     } catch (err: any) {
       toast({ title: "Auth Error", description: err.message, variant: "destructive" });
