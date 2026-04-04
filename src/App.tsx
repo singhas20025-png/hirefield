@@ -79,7 +79,7 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <AppLayout>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/candidates" element={<Candidates />} />
                 <Route path="/candidates/:id" element={<CandidateDetail />} />
                 <Route path="/interviews" element={<Interviews />} />
