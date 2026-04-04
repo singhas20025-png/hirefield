@@ -58,10 +58,10 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public landing page */}
-      <Route path="/index" element={<Index />} />
+      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Index />} />
 
       {/* Auth routes */}
-      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+      <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
 
       {/* Public career pages (no auth required) */}
       <Route path="/careers/:slug" element={<CareerPage />} />
